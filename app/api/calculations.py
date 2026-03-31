@@ -5,12 +5,12 @@ These endpoints accept inputs and return calculated results.
 Used by HTMX for real-time updates.
 """
 
-from fastapi import APIRouter
-from pydantic import BaseModel
-from typing import List, Optional
 from datetime import date
 
-from app.calculations import irr, cashflow, waterfall
+from fastapi import APIRouter
+from pydantic import BaseModel
+
+from app.calculations import cashflow, irr, waterfall
 
 router = APIRouter()
 
@@ -76,7 +76,7 @@ class CashFlowInput(BaseModel):
 
     # Tenant-level rent roll (optional, for per-tenant calculations)
     # If provided, uses tenant-by-tenant rent with lease expiry logic
-    tenants: Optional[List[TenantInput]] = None
+    tenants: list[TenantInput] | None = None
 
     # Expenses
     fixed_opex_psf: float = 36.0
@@ -94,7 +94,7 @@ class CashFlowInput(BaseModel):
     sales_cost_percent: float = 0.01
 
     # Financing (optional)
-    loan_amount: Optional[float] = None
+    loan_amount: float | None = None
     interest_rate: float = 0.05
     io_months: int = 120
     amortization_years: int = 30
@@ -113,7 +113,7 @@ class CashFlowInput(BaseModel):
     # If use_multi_hurdle is True, uses the 225 Worth Ave default structure
     # Otherwise uses simple single-tier waterfall
     use_multi_hurdle: bool = True
-    hurdles: Optional[List[WaterfallHurdleInput]] = None
+    hurdles: list[WaterfallHurdleInput] | None = None
     final_lp_split: float = 0.75
     final_gp_split: float = 0.0833
     final_gp_promote: float = 0.1667
@@ -128,23 +128,23 @@ class ReturnMetrics(BaseModel):
     unleveraged_profit: float
 
     # Leveraged
-    leveraged_irr: Optional[float] = None
-    leveraged_multiple: Optional[float] = None
-    leveraged_profit: Optional[float] = None
+    leveraged_irr: float | None = None
+    leveraged_multiple: float | None = None
+    leveraged_profit: float | None = None
 
     # LP/GP (if waterfall provided)
-    lp_irr: Optional[float] = None
-    lp_multiple: Optional[float] = None
-    gp_irr: Optional[float] = None
-    gp_multiple: Optional[float] = None
+    lp_irr: float | None = None
+    lp_multiple: float | None = None
+    gp_irr: float | None = None
+    gp_multiple: float | None = None
 
 
 class CashFlowResponse(BaseModel):
     """Response with cash flows and metrics."""
 
     metrics: ReturnMetrics
-    annual_cashflows: List[dict]
-    monthly_cashflows: List[dict]
+    annual_cashflows: list[dict]
+    monthly_cashflows: list[dict]
 
 
 @router.post("/cashflows", response_model=CashFlowResponse)
@@ -152,9 +152,7 @@ async def calculate_cashflows(inputs: CashFlowInput):
     """Calculate full cash flow projections and return metrics."""
 
     # Generate dates
-    dates = cashflow.generate_monthly_dates(
-        inputs.acquisition_date, inputs.hold_period_months
-    )
+    dates = cashflow.generate_monthly_dates(inputs.acquisition_date, inputs.hold_period_months)
 
     # Convert tenant inputs to Tenant objects if provided
     tenant_list = None
@@ -340,8 +338,8 @@ async def calculate_cashflows(inputs: CashFlowInput):
 class IRRInput(BaseModel):
     """Input for IRR calculation."""
 
-    cash_flows: List[float]
-    dates: Optional[List[date]] = None
+    cash_flows: list[float]
+    dates: list[date] | None = None
 
 
 class IRRResponse(BaseModel):

@@ -13,18 +13,18 @@ Environment variables (from .env.development or .env.production):
     INITIAL_ADMIN_PASSWORD - Password for the admin user
 """
 
-import sys
 import os
+import sys
 
 # Add the project root to the path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from datetime import datetime
 
+from app.auth.password import hash_password
 from app.config import get_settings
 from app.db.database import get_db_context, init_db
 from app.db.models import User, UserRole
-from app.auth.password import hash_password
 
 
 def create_initial_admin():
@@ -47,9 +47,7 @@ def create_initial_admin():
 
     with get_db_context() as db:
         # Check if user already exists
-        existing = db.query(User).filter(
-            User.email == settings.initial_admin_email.lower()
-        ).first()
+        existing = db.query(User).filter(User.email == settings.initial_admin_email.lower()).first()
 
         if existing:
             if existing.role == UserRole.admin:

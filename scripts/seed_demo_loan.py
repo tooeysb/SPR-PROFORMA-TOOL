@@ -2,13 +2,15 @@
 Seed financing/loan for the 225 Worth Ave demo property.
 Based on the PRD documentation.
 """
-import sys
+
 import os
+import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.db.database import SessionLocal
-from app.db.models import Property, Scenario, Loan
+from app.db.models import Loan, Property, Scenario
+
 
 def main():
     db = SessionLocal()
@@ -23,10 +25,11 @@ def main():
         print(f"Found property: {property.name} (ID: {property.id})")
 
         # Find the Base Case scenario
-        scenario = db.query(Scenario).filter(
-            Scenario.property_id == property.id,
-            Scenario.is_base_case == True
-        ).first()
+        scenario = (
+            db.query(Scenario)
+            .filter(Scenario.property_id == property.id, Scenario.is_base_case == True)
+            .first()
+        )
         if not scenario:
             print("Base Case scenario not found!")
             return
@@ -45,25 +48,20 @@ def main():
             scenario_id=scenario.id,
             name="Senior Acquisition Loan",
             loan_type="acquisition",
-
             # Amount
             amount=27000000,
             ltv_ratio=0.65,
-
             # Interest rate
             interest_type="fixed",
             fixed_rate=0.055,  # 5.5%
-
             # Fees
             origination_fee_percent=0.01,
             closing_costs_percent=0.005,
-
             # Term structure
             io_months=36,  # 3 years interest-only
             amortization_years=30,
             maturity_months=120,  # 10 year term
             start_month=0,
-
             # Debt sizing constraints
             min_dscr=1.25,
             max_ltv=0.75,
@@ -84,6 +82,7 @@ def main():
         raise
     finally:
         db.close()
+
 
 if __name__ == "__main__":
     main()

@@ -11,50 +11,45 @@ Document: docs/EXCEL_FORMULA_DEEP_DIVE.md
 Run with: pytest tests/test_excel_formula_parity.py -v
 """
 
-import pytest
 from datetime import date
-from typing import List, Dict, Any
 
+import pytest
+
+from app.calculations.amortization import calculate_payment, generate_amortization_schedule
 from app.calculations.cashflow import (
     Tenant,
-    calculate_tenant_rent,
-    calculate_tenant_rent_detailed,
-    calculate_rent_escalation,
     calculate_expense_escalation,
     calculate_property_tax_escalation,
+    calculate_rent_escalation,
+    calculate_tenant_rent,
+    calculate_tenant_rent_detailed,
     generate_cash_flows,
     generate_monthly_dates,
-    calculate_lease_commission,
-    calculate_ti_cost,
 )
 from app.calculations.irr import (
     calculate_xirr,
-    calculate_multiple,
     monthly_to_annual_irr,
 )
 from app.calculations.waterfall import (
-    calculate_waterfall_distributions,
-    extract_lp_cash_flows,
-    extract_gp_cash_flows,
-    WaterfallTier,
-    DEFAULT_WATERFALL_TIERS,
     DEFAULT_FINAL_SPLIT,
+    DEFAULT_WATERFALL_TIERS,
+    calculate_waterfall_distributions,
+    extract_gp_cash_flows,
+    extract_lp_cash_flows,
 )
-from app.calculations.amortization import calculate_payment, generate_amortization_schedule
-
 
 # =============================================================================
 # EXCEL BENCHMARK VALUES - Extracted from actual workbook (data_only=True)
 # =============================================================================
 
 # Tolerances
-TOL_ESCALATION = 0.0001      # 0.01% for escalation factors
-TOL_RENT = 0.05              # $50 for rent values ($000s)
-TOL_NOI = 0.5                # $500 for NOI ($000s)
-TOL_INTEREST = 0.5           # $500 for interest ($000s)
-TOL_CF = 1.0                 # $1K for cash flows
-TOL_IRR = 0.003              # 30 basis points for IRR
-TOL_WATERFALL = 5.0          # $5K for waterfall distributions
+TOL_ESCALATION = 0.0001  # 0.01% for escalation factors
+TOL_RENT = 0.05  # $50 for rent values ($000s)
+TOL_NOI = 0.5  # $500 for NOI ($000s)
+TOL_INTEREST = 0.5  # $500 for interest ($000s)
+TOL_CF = 1.0  # $1K for cash flows
+TOL_IRR = 0.003  # 30 basis points for IRR
+TOL_WATERFALL = 5.0  # $5K for waterfall distributions
 
 
 # -----------------------------------------------------------------------------
@@ -97,10 +92,10 @@ EXCEL_TENANT_RENT = {
         1: 31.270958575223613,
         12: 31.995096415114574,
         50: 34.62815120078679,  # Last month before expiry
-        51: 0,                   # TI buildout period (6 months)
+        51: 0,  # TI buildout period (6 months)
         52: 0,
         57: 52.581830814426645,  # Market rent + free rent deduction
-        67: 53.68761277536323,   # After free rent period
+        67: 53.68761277536323,  # After free rent period
     },
     # Row 48: Gucci (5,950 SF @ $187.65 PSF)
     "gucci": {
@@ -121,7 +116,7 @@ EXCEL_FREE_RENT = {
         57: -52.581830814426645,
         58: -52.691376295290034,
         66: None,  # Should still be in free rent
-        67: 0,     # Free rent ended
+        67: 0,  # Free rent ended
     },
 }
 
@@ -166,7 +161,7 @@ EXCEL_NOI = {
     0: -4.215833333333333,  # Negative due to CapEx in Month 0
     1: 158.9733843710382,
     12: 162.65582671285,
-    52: 142.0077695842358,   # During J McLaughlin TI buildout
+    52: 142.0077695842358,  # During J McLaughlin TI buildout
     120: 247.80158499427793,
 }
 
@@ -238,8 +233,8 @@ EXCEL_WATERFALL = {
 
 EXCEL_LC = {
     "year_1_annual_rent": 690000,  # $690K annual
-    "year_1_net_rent": 115000,     # After free rent adjustment
-    "year_1_lc": 6900,             # 6% of net rent
+    "year_1_net_rent": 115000,  # After free rent adjustment
+    "year_1_lc": 6900,  # 6% of net rent
     "total_lc": 306216.0028680217,  # Full lease term
 }
 
@@ -314,13 +309,16 @@ class TestRentEscalation:
     Python: calculate_rent_escalation(annual_rate, period)
     """
 
-    @pytest.mark.parametrize("period,expected", [
-        (0, EXCEL_RENT_ESCALATION[0]),
-        (1, EXCEL_RENT_ESCALATION[1]),
-        (12, EXCEL_RENT_ESCALATION[12]),
-        (24, EXCEL_RENT_ESCALATION[24]),
-        (120, EXCEL_RENT_ESCALATION[120]),
-    ])
+    @pytest.mark.parametrize(
+        "period,expected",
+        [
+            (0, EXCEL_RENT_ESCALATION[0]),
+            (1, EXCEL_RENT_ESCALATION[1]),
+            (12, EXCEL_RENT_ESCALATION[12]),
+            (24, EXCEL_RENT_ESCALATION[24]),
+            (120, EXCEL_RENT_ESCALATION[120]),
+        ],
+    )
     def test_rent_escalation_factor(self, period: int, expected: float):
         """Verify rent escalation matches Excel Row 2 values."""
         actual = calculate_rent_escalation(0.025, period)
@@ -339,13 +337,16 @@ class TestExpenseEscalation:
     Python: calculate_expense_escalation(annual_rate, period)
     """
 
-    @pytest.mark.parametrize("period,expected", [
-        (0, EXCEL_EXPENSE_ESCALATION[0]),
-        (1, EXCEL_EXPENSE_ESCALATION[1]),
-        (12, EXCEL_EXPENSE_ESCALATION[12]),
-        (24, EXCEL_EXPENSE_ESCALATION[24]),
-        (120, EXCEL_EXPENSE_ESCALATION[120]),
-    ])
+    @pytest.mark.parametrize(
+        "period,expected",
+        [
+            (0, EXCEL_EXPENSE_ESCALATION[0]),
+            (1, EXCEL_EXPENSE_ESCALATION[1]),
+            (12, EXCEL_EXPENSE_ESCALATION[12]),
+            (24, EXCEL_EXPENSE_ESCALATION[24]),
+            (120, EXCEL_EXPENSE_ESCALATION[120]),
+        ],
+    )
     def test_expense_escalation_factor(self, period: int, expected: float):
         """Verify expense escalation matches Excel Row 3 values."""
         actual = calculate_expense_escalation(0.025, period)
@@ -414,8 +415,7 @@ class TestTenantRevenue:
         actual = calculate_tenant_rent(tenant, 51, 0.025)
         expected = EXCEL_TENANT_RENT["j_mclaughlin"][51]
         assert actual == expected, (
-            f"J McLaughlin Month 51 should be $0 during buildout\n"
-            f"  Actual: ${actual:.2f}K"
+            f"J McLaughlin Month 51 should be $0 during buildout\n" f"  Actual: ${actual:.2f}K"
         )
 
     def test_j_mclaughlin_month_67_after_free_rent(self):
@@ -464,8 +464,7 @@ class TestFreeRentDeduction:
         gross, free_rent = calculate_tenant_rent_detailed(tenant, 67, 0.025)
         expected = EXCEL_FREE_RENT["j_mclaughlin"][67]
         assert free_rent == expected, (
-            f"Free rent should be $0 after free rent period\n"
-            f"  Actual: ${free_rent:.2f}K"
+            f"Free rent should be $0 after free rent period\n" f"  Actual: ${free_rent:.2f}K"
         )
 
 
@@ -1037,10 +1036,7 @@ class TestWaterfallDistributions:
 
     def test_lp_irr(self, waterfall_results):
         """LP IRR matches Excel Waterfall I126."""
-        lp_irr = calculate_xirr(
-            waterfall_results["lp_cfs"],
-            waterfall_results["dates"]
-        )
+        lp_irr = calculate_xirr(waterfall_results["lp_cfs"], waterfall_results["dates"])
         expected = EXCEL_WATERFALL["lp_irr"]
         assert abs(lp_irr - expected) < TOL_IRR, (
             f"LP IRR mismatch\n"
@@ -1051,10 +1047,7 @@ class TestWaterfallDistributions:
 
     def test_gp_irr(self, waterfall_results):
         """GP IRR matches Excel Waterfall I142."""
-        gp_irr = calculate_xirr(
-            waterfall_results["gp_cfs"],
-            waterfall_results["dates"]
-        )
+        gp_irr = calculate_xirr(waterfall_results["gp_cfs"], waterfall_results["dates"])
         expected = EXCEL_WATERFALL["gp_irr"]
         assert abs(gp_irr - expected) < TOL_IRR, (
             f"GP IRR mismatch\n"
@@ -1136,8 +1129,7 @@ class TestAmortization:
         # Expected from Excel: approximately $93.5K monthly
         # For I/O loan during hold period, this is just theoretical
         assert payment > 90 and payment < 100, (
-            f"Payment calculation unexpected\n"
-            f"  Payment: ${payment:.2f}K"
+            f"Payment calculation unexpected\n" f"  Payment: ${payment:.2f}K"
         )
 
     def test_io_period_interest_only(self):
@@ -1152,9 +1144,9 @@ class TestAmortization:
 
         # All payments during I/O should have zero principal
         for period in schedule:
-            assert period["principal"] == 0, (
-                f"Period {period['period']} should have $0 principal during I/O"
-            )
+            assert (
+                period["principal"] == 0
+            ), f"Period {period['period']} should have $0 principal during I/O"
 
     def test_ending_balance_unchanged_during_io(self):
         """Loan balance stays constant during I/O period."""
@@ -1168,9 +1160,9 @@ class TestAmortization:
 
         initial_balance = EXCEL_PARAMS["loan_amount"]
         for period in schedule:
-            assert abs(period["ending_balance"] - initial_balance) < 0.01, (
-                f"Balance changed during I/O: ${period['ending_balance']:.2f}K"
-            )
+            assert (
+                abs(period["ending_balance"] - initial_balance) < 0.01
+            ), f"Balance changed during I/O: ${period['ending_balance']:.2f}K"
 
 
 class TestMonthlyToAnnualIRR:
@@ -1293,9 +1285,7 @@ class TestExcelParitySummary:
                     f"(diff: {diff*100:.2f}%, tol: {TOL_IRR*100:.2f}%)"
                 )
 
-        assert len(failures) == 0, (
-            f"IRR parity failures:\n" + "\n".join(failures)
-        )
+        assert len(failures) == 0, "IRR parity failures:\n" + "\n".join(failures)
 
     def test_month_1_noi_matches(self, full_model_results):
         """Month 1 NOI matches Excel."""

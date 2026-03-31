@@ -2,17 +2,16 @@
 FastAPI dependencies for authentication and authorization.
 """
 
-from typing import Optional
 
-from fastapi import Depends, HTTPException, status, Request, Cookie
+from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
+from app.auth.jwt import decode_token
 from app.db.database import get_db
 from app.db.models import User, UserRole
-from app.auth.jwt import decode_token
 
 
-def get_token_from_request(request: Request) -> Optional[str]:
+def get_token_from_request(request: Request) -> str | None:
     """
     Extract JWT token from request.
 
@@ -36,7 +35,7 @@ def get_token_from_request(request: Request) -> Optional[str]:
 async def get_current_user_optional(
     request: Request,
     db: Session = Depends(get_db),
-) -> Optional[User]:
+) -> User | None:
     """
     Get the current user if authenticated, None otherwise.
 
@@ -58,11 +57,15 @@ async def get_current_user_optional(
     if not user_id:
         return None
 
-    user = db.query(User).filter(
-        User.id == user_id,
-        User.is_deleted == False,
-        User.is_active == True,
-    ).first()
+    user = (
+        db.query(User)
+        .filter(
+            User.id == user_id,
+            User.is_deleted == False,
+            User.is_active == True,
+        )
+        .first()
+    )
 
     return user
 

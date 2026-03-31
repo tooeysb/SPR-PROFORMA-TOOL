@@ -1,11 +1,12 @@
 """
-JWT token utilities using python-jose.
+JWT token utilities using PyJWT.
 """
 
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any
+from typing import Any
 
-from jose import jwt, JWTError
+import jwt
+from jwt import PyJWTError
 
 from app.config import get_settings
 
@@ -13,8 +14,8 @@ settings = get_settings()
 
 
 def create_access_token(
-    data: Dict[str, Any],
-    expires_delta: Optional[timedelta] = None,
+    data: dict[str, Any],
+    expires_delta: timedelta | None = None,
 ) -> str:
     """
     Create a JWT access token.
@@ -31,14 +32,14 @@ def create_access_token(
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(
-            minutes=settings.jwt_access_token_expire_minutes
-        )
+        expire = datetime.utcnow() + timedelta(minutes=settings.jwt_access_token_expire_minutes)
 
-    to_encode.update({
-        "exp": expire,
-        "type": "access",
-    })
+    to_encode.update(
+        {
+            "exp": expire,
+            "type": "access",
+        }
+    )
 
     return jwt.encode(
         to_encode,
@@ -48,8 +49,8 @@ def create_access_token(
 
 
 def create_refresh_token(
-    data: Dict[str, Any],
-    expires_delta: Optional[timedelta] = None,
+    data: dict[str, Any],
+    expires_delta: timedelta | None = None,
 ) -> str:
     """
     Create a JWT refresh token.
@@ -66,14 +67,14 @@ def create_refresh_token(
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(
-            days=settings.jwt_refresh_token_expire_days
-        )
+        expire = datetime.utcnow() + timedelta(days=settings.jwt_refresh_token_expire_days)
 
-    to_encode.update({
-        "exp": expire,
-        "type": "refresh",
-    })
+    to_encode.update(
+        {
+            "exp": expire,
+            "type": "refresh",
+        }
+    )
 
     return jwt.encode(
         to_encode,
@@ -82,7 +83,7 @@ def create_refresh_token(
     )
 
 
-def decode_token(token: str) -> Optional[Dict[str, Any]]:
+def decode_token(token: str) -> dict[str, Any] | None:
     """
     Decode and validate a JWT token.
 
@@ -99,11 +100,11 @@ def decode_token(token: str) -> Optional[Dict[str, Any]]:
             algorithms=[settings.jwt_algorithm],
         )
         return payload
-    except JWTError:
+    except PyJWTError:
         return None
 
 
-def get_token_expiry(token: str) -> Optional[datetime]:
+def get_token_expiry(token: str) -> datetime | None:
     """Get the expiration datetime of a token."""
     payload = decode_token(token)
     if payload and "exp" in payload:

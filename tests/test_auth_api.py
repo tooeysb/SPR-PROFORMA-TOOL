@@ -2,14 +2,15 @@
 Tests for authentication API endpoints.
 """
 
-import pytest
 from datetime import datetime, timedelta
+
+import pytest
 from fastapi.testclient import TestClient
 
-from app.main import app
-from app.db.models import User, UserRole, InviteToken, RefreshToken, PasswordResetToken
 from app.auth.password import hash_password
 from app.auth.tokens import generate_token, hash_token
+from app.db.models import InviteToken, PasswordResetToken, RefreshToken, User, UserRole
+from app.main import app
 
 # Database setup is handled by conftest.py
 
@@ -278,7 +279,6 @@ class TestResetPassword:
 
     def test_reset_password_success(self, client, test_user, db_session):
         """Test successful password reset."""
-        from app.db.models import PasswordResetToken
 
         token = generate_token()
         reset = PasswordResetToken(
@@ -306,7 +306,6 @@ class TestResetPassword:
 
     def test_reset_password_revokes_sessions(self, client, test_user, db_session):
         """Test that password reset revokes all refresh tokens."""
-        from app.db.models import PasswordResetToken
 
         # Create a refresh token
         refresh = RefreshToken(

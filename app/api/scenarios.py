@@ -3,15 +3,15 @@ Scenario management API endpoints.
 """
 
 import logging
-from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel
-from typing import Optional, List
 from datetime import date
+
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from app.calculations import cashflow, irr, waterfall
 from app.db.database import get_db
-from app.db.models import Property, Scenario, Lease, Loan
-from app.calculations import irr, cashflow, waterfall
+from app.db.models import Lease, Loan, Property, Scenario
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ class LeaseInput(BaseModel):
     space_id: str
     rsf: float
     base_rent_psf: float
-    market_rent_psf: Optional[float] = None
+    market_rent_psf: float | None = None
     escalation_type: str = "percentage"
     escalation_value: float = 0.025
     escalation_frequency: str = "annual"
@@ -42,7 +42,7 @@ class LeaseInput(BaseModel):
     reimbursement_type: str = "NNN"
     recovery_percentage: float = 1.0
     is_vacant: bool = False
-    options: List[dict] = []
+    options: list[dict] = []
 
 
 class LoanInput(BaseModel):
@@ -50,15 +50,15 @@ class LoanInput(BaseModel):
 
     name: str
     loan_type: str = "acquisition"
-    amount: Optional[float] = None
-    ltc_ratio: Optional[float] = None
-    ltv_ratio: Optional[float] = None
+    amount: float | None = None
+    ltc_ratio: float | None = None
+    ltv_ratio: float | None = None
     interest_type: str = "fixed"
     fixed_rate: float = 0.0525  # PRD Section 7.1: Interest Rate J15 = 5.25%
-    floating_spread: Optional[float] = None
+    floating_spread: float | None = None
     index_type: str = "SOFR"
-    rate_floor: Optional[float] = None
-    rate_cap: Optional[float] = None
+    rate_floor: float | None = None
+    rate_cap: float | None = None
     origination_fee_percent: float = 0.01
     closing_costs_percent: float = 0.01
     io_months: int = 120
@@ -83,7 +83,7 @@ class ScenarioCreate(BaseModel):
 
     property_id: str
     name: str
-    description: Optional[str] = None
+    description: str | None = None
     is_base_case: bool = False
 
     # Timing
@@ -117,49 +117,49 @@ class ScenarioCreate(BaseModel):
     gp_share: float = 0.10
     pref_return: float = 0.05
     compound_monthly: bool = False
-    waterfall_hurdles: List[WaterfallHurdleInput] = []
+    waterfall_hurdles: list[WaterfallHurdleInput] = []
 
     # Nested data
-    leases: List[LeaseInput] = []
-    loans: List[LoanInput] = []
+    leases: list[LeaseInput] = []
+    loans: list[LoanInput] = []
 
 
 class ScenarioUpdate(BaseModel):
     """Schema for updating a scenario."""
 
-    name: Optional[str] = None
-    description: Optional[str] = None
-    is_base_case: Optional[bool] = None
-    acquisition_date: Optional[date] = None
-    hold_period_months: Optional[int] = None
-    stabilization_month: Optional[int] = None
-    purchase_price: Optional[float] = None
-    closing_costs: Optional[float] = None
-    exit_cap_rate: Optional[float] = None
-    sales_cost_percent: Optional[float] = None
+    name: str | None = None
+    description: str | None = None
+    is_base_case: bool | None = None
+    acquisition_date: date | None = None
+    hold_period_months: int | None = None
+    stabilization_month: int | None = None
+    purchase_price: float | None = None
+    closing_costs: float | None = None
+    exit_cap_rate: float | None = None
+    sales_cost_percent: float | None = None
 
     # Operating Assumptions (individual fields to match frontend)
-    market_rent_psf: Optional[float] = None
-    vacancy_rate: Optional[float] = None
-    collection_loss: Optional[float] = None
-    fixed_opex_psf: Optional[float] = None
-    variable_opex_psf: Optional[float] = None
-    management_fee_percent: Optional[float] = None
-    property_tax_amount: Optional[float] = None
-    property_tax_millage: Optional[float] = None
-    capex_reserve_psf: Optional[float] = None
-    revenue_growth: Optional[float] = None
-    expense_growth: Optional[float] = None
+    market_rent_psf: float | None = None
+    vacancy_rate: float | None = None
+    collection_loss: float | None = None
+    fixed_opex_psf: float | None = None
+    variable_opex_psf: float | None = None
+    management_fee_percent: float | None = None
+    property_tax_amount: float | None = None
+    property_tax_millage: float | None = None
+    capex_reserve_psf: float | None = None
+    revenue_growth: float | None = None
+    expense_growth: float | None = None
 
     # Waterfall (individual fields to match frontend)
-    lp_share: Optional[float] = None
-    gp_share: Optional[float] = None
-    pref_return: Optional[float] = None
-    compound_monthly: Optional[bool] = None
+    lp_share: float | None = None
+    gp_share: float | None = None
+    pref_return: float | None = None
+    compound_monthly: bool | None = None
 
     # Nested data
-    leases: Optional[List[LeaseInput]] = None
-    loans: Optional[List[LoanInput]] = None
+    leases: list[LeaseInput] | None = None
+    loans: list[LoanInput] | None = None
 
 
 # ============= Response Schemas =============
@@ -170,17 +170,17 @@ class LeaseResponse(BaseModel):
 
     id: str
     tenant_name: str
-    space_id: Optional[str]
-    rsf: Optional[float]
-    base_rent_psf: Optional[float]
-    market_rent_psf: Optional[float]
-    lease_start: Optional[date]
-    lease_end: Optional[date]
-    escalation_type: Optional[str]
-    escalation_value: Optional[float]
-    free_rent_months: Optional[int]
-    ti_allowance_psf: Optional[float]
-    reimbursement_type: Optional[str]
+    space_id: str | None
+    rsf: float | None
+    base_rent_psf: float | None
+    market_rent_psf: float | None
+    lease_start: date | None
+    lease_end: date | None
+    escalation_type: str | None
+    escalation_value: float | None
+    free_rent_months: int | None
+    ti_allowance_psf: float | None
+    reimbursement_type: str | None
     is_vacant: bool = False
 
     class Config:
@@ -191,15 +191,15 @@ class LoanResponse(BaseModel):
     """Loan response schema."""
 
     id: str
-    name: Optional[str]
-    loan_type: Optional[str]
-    amount: Optional[float]
-    ltc_ratio: Optional[float]
-    interest_type: Optional[str]
-    fixed_rate: Optional[float]
-    floating_spread: Optional[float]
-    io_months: Optional[int]
-    amortization_years: Optional[int]
+    name: str | None
+    loan_type: str | None
+    amount: float | None
+    ltc_ratio: float | None
+    interest_type: str | None
+    fixed_rate: float | None
+    floating_spread: float | None
+    io_months: int | None
+    amortization_years: int | None
 
     class Config:
         from_attributes = True
@@ -208,14 +208,14 @@ class LoanResponse(BaseModel):
 class ReturnMetricsResponse(BaseModel):
     """Return metrics response."""
 
-    unleveraged_irr: Optional[float] = None
-    unleveraged_multiple: Optional[float] = None
-    unleveraged_profit: Optional[float] = None
-    leveraged_irr: Optional[float] = None
-    leveraged_multiple: Optional[float] = None
-    leveraged_profit: Optional[float] = None
-    lp_irr: Optional[float] = None
-    gp_irr: Optional[float] = None
+    unleveraged_irr: float | None = None
+    unleveraged_multiple: float | None = None
+    unleveraged_profit: float | None = None
+    leveraged_irr: float | None = None
+    leveraged_multiple: float | None = None
+    leveraged_profit: float | None = None
+    lp_irr: float | None = None
+    gp_irr: float | None = None
 
 
 class ScenarioResponse(BaseModel):
@@ -224,19 +224,19 @@ class ScenarioResponse(BaseModel):
     id: str
     property_id: str
     name: str
-    description: Optional[str]
+    description: str | None
     is_base_case: bool
-    acquisition_date: Optional[date]
-    hold_period_months: Optional[int]
-    purchase_price: Optional[float]
-    closing_costs: Optional[float]
-    exit_cap_rate: Optional[float]
-    sales_cost_percent: Optional[float]
-    operating_assumptions: Optional[dict]
-    waterfall_structure: Optional[dict]
-    return_metrics: Optional[dict]
-    leases: List[LeaseResponse] = []
-    loans: List[LoanResponse] = []
+    acquisition_date: date | None
+    hold_period_months: int | None
+    purchase_price: float | None
+    closing_costs: float | None
+    exit_cap_rate: float | None
+    sales_cost_percent: float | None
+    operating_assumptions: dict | None
+    waterfall_structure: dict | None
+    return_metrics: dict | None
+    leases: list[LeaseResponse] = []
+    loans: list[LoanResponse] = []
 
     class Config:
         from_attributes = True
@@ -245,7 +245,7 @@ class ScenarioResponse(BaseModel):
 class ScenarioListResponse(BaseModel):
     """Response for listing scenarios."""
 
-    scenarios: List[ScenarioResponse]
+    scenarios: list[ScenarioResponse]
     total: int
 
 
@@ -368,9 +368,8 @@ def calculate_scenario_returns(scenario: Scenario, db: Session) -> dict:
                 # Calculate lease_end_month as months from acquisition date
                 lease_end_month = scenario.hold_period_months or 120  # Default to hold period
                 if lease.lease_end:
-                    months_diff = (
-                        (lease.lease_end.year - scenario.acquisition_date.year) * 12
-                        + (lease.lease_end.month - scenario.acquisition_date.month)
+                    months_diff = (lease.lease_end.year - scenario.acquisition_date.year) * 12 + (
+                        lease.lease_end.month - scenario.acquisition_date.month
                     )
                     lease_end_month = max(0, months_diff)
 
@@ -384,7 +383,7 @@ def calculate_scenario_returns(scenario: Scenario, db: Session) -> dict:
                         # Rollover behavior (Excel H-column equivalent)
                         # True = apply TI/LC/Free Rent at rollover (H=0)
                         # False = no costs, immediate market rent (H=1)
-                        apply_rollover_costs=getattr(lease, 'apply_rollover_costs', True),
+                        apply_rollover_costs=getattr(lease, "apply_rollover_costs", True),
                         # Free rent and TI buildout timing
                         free_rent_months=lease.free_rent_months or 0,
                         free_rent_start_month=lease.free_rent_start_month or 0,
@@ -488,7 +487,9 @@ def calculate_scenario_returns(scenario: Scenario, db: Session) -> dict:
         metrics["unleveraged_irr"] = irr.calculate_xirr(unleveraged_cf, dates)
         metrics["unleveraged_multiple"] = irr.calculate_multiple(unleveraged_cf)
         metrics["unleveraged_profit"] = irr.calculate_profit(unleveraged_cf)
-        logger.info(f"Unleveraged metrics: IRR={metrics['unleveraged_irr']:.4f}, Multiple={metrics['unleveraged_multiple']:.2f}")
+        logger.info(
+            f"Unleveraged metrics: IRR={metrics['unleveraged_irr']:.4f}, Multiple={metrics['unleveraged_multiple']:.2f}"
+        )
     except Exception as e:
         error_msg = f"Unleveraged IRR calculation failed: {str(e)}"
         logger.error(error_msg)
@@ -504,7 +505,9 @@ def calculate_scenario_returns(scenario: Scenario, db: Session) -> dict:
             metrics["leveraged_irr"] = irr.calculate_xirr(leveraged_cf, dates)
             metrics["leveraged_multiple"] = irr.calculate_multiple(leveraged_cf)
             metrics["leveraged_profit"] = irr.calculate_profit(leveraged_cf)
-            logger.info(f"Leveraged metrics: IRR={metrics['leveraged_irr']:.4f}, Multiple={metrics['leveraged_multiple']:.2f}")
+            logger.info(
+                f"Leveraged metrics: IRR={metrics['leveraged_irr']:.4f}, Multiple={metrics['leveraged_multiple']:.2f}"
+            )
         except Exception as e:
             error_msg = f"Leveraged IRR calculation failed: {str(e)}"
             logger.error(error_msg)
@@ -515,7 +518,9 @@ def calculate_scenario_returns(scenario: Scenario, db: Session) -> dict:
         # Total equity in $000s for consistency with cash flows
         total_equity = purchase_price_000s + closing_costs_000s - loan_amount_000s
 
-        logger.info(f"Waterfall: total_equity={total_equity} ($000s), lp_share={wf_structure.get('lp_share', 0.90)}")
+        logger.info(
+            f"Waterfall: total_equity={total_equity} ($000s), lp_share={wf_structure.get('lp_share', 0.90)}"
+        )
 
         if total_equity > 0:
             try:
@@ -575,7 +580,7 @@ def calculate_scenario_returns(scenario: Scenario, db: Session) -> dict:
 
 @router.get("/", response_model=ScenarioListResponse)
 async def list_scenarios(
-    property_id: Optional[str] = None,
+    property_id: str | None = None,
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
@@ -604,9 +609,7 @@ async def create_scenario(
     # Verify property exists
     db_property = (
         db.query(Property)
-        .filter(
-            Property.id == scenario_data.property_id, Property.is_deleted == False
-        )
+        .filter(Property.id == scenario_data.property_id, Property.is_deleted == False)
         .first()
     )
 
@@ -727,9 +730,7 @@ async def get_scenario(
 ):
     """Get a scenario by ID with full details."""
     db_scenario = (
-        db.query(Scenario)
-        .filter(Scenario.id == scenario_id, Scenario.is_deleted == False)
-        .first()
+        db.query(Scenario).filter(Scenario.id == scenario_id, Scenario.is_deleted == False).first()
     )
 
     if not db_scenario:
@@ -746,9 +747,7 @@ async def update_scenario(
 ):
     """Update a scenario."""
     db_scenario = (
-        db.query(Scenario)
-        .filter(Scenario.id == scenario_id, Scenario.is_deleted == False)
-        .first()
+        db.query(Scenario).filter(Scenario.id == scenario_id, Scenario.is_deleted == False).first()
     )
 
     if not db_scenario:
@@ -761,9 +760,17 @@ async def update_scenario(
 
     # Operating assumption fields that get bundled into operating_assumptions dict
     op_assumption_fields = [
-        "market_rent_psf", "vacancy_rate", "collection_loss", "fixed_opex_psf",
-        "variable_opex_psf", "management_fee_percent", "property_tax_amount",
-        "property_tax_millage", "capex_reserve_psf", "revenue_growth", "expense_growth"
+        "market_rent_psf",
+        "vacancy_rate",
+        "collection_loss",
+        "fixed_opex_psf",
+        "variable_opex_psf",
+        "management_fee_percent",
+        "property_tax_amount",
+        "property_tax_millage",
+        "capex_reserve_psf",
+        "revenue_growth",
+        "expense_growth",
     ]
 
     # Waterfall fields that get bundled into waterfall_structure dict
@@ -878,9 +885,7 @@ async def delete_scenario(
 ):
     """Soft delete a scenario."""
     db_scenario = (
-        db.query(Scenario)
-        .filter(Scenario.id == scenario_id, Scenario.is_deleted == False)
-        .first()
+        db.query(Scenario).filter(Scenario.id == scenario_id, Scenario.is_deleted == False).first()
     )
 
     if not db_scenario:
@@ -899,9 +904,7 @@ async def calculate_scenario(
 ):
     """Recalculate return metrics for a scenario."""
     db_scenario = (
-        db.query(Scenario)
-        .filter(Scenario.id == scenario_id, Scenario.is_deleted == False)
-        .first()
+        db.query(Scenario).filter(Scenario.id == scenario_id, Scenario.is_deleted == False).first()
     )
 
     if not db_scenario:
@@ -925,9 +928,7 @@ async def get_scenario_cashflows(
 ):
     """Get cash flow projections for a scenario."""
     db_scenario = (
-        db.query(Scenario)
-        .filter(Scenario.id == scenario_id, Scenario.is_deleted == False)
-        .first()
+        db.query(Scenario).filter(Scenario.id == scenario_id, Scenario.is_deleted == False).first()
     )
 
     if not db_scenario:
@@ -983,9 +984,8 @@ async def get_scenario_cashflows(
                 lease_end_month = db_scenario.hold_period_months or 120
                 if lease.lease_end and db_scenario.acquisition_date:
                     months_diff = (
-                        (lease.lease_end.year - db_scenario.acquisition_date.year) * 12
-                        + (lease.lease_end.month - db_scenario.acquisition_date.month)
-                    )
+                        lease.lease_end.year - db_scenario.acquisition_date.year
+                    ) * 12 + (lease.lease_end.month - db_scenario.acquisition_date.month)
                     lease_end_month = max(0, months_diff)
 
                 tenant_list.append(
@@ -996,7 +996,7 @@ async def get_scenario_cashflows(
                         market_rent_psf=op_assumptions.get("market_rent_psf", 300),
                         lease_end_month=lease_end_month,
                         # Rollover behavior (Excel H-column equivalent)
-                        apply_rollover_costs=getattr(lease, 'apply_rollover_costs', True),
+                        apply_rollover_costs=getattr(lease, "apply_rollover_costs", True),
                         free_rent_months=lease.free_rent_months or 0,
                         free_rent_start_month=lease.free_rent_start_month or 0,
                         ti_buildout_months=lease.ti_buildout_months or 0,
@@ -1077,9 +1077,7 @@ async def add_lease(
 ):
     """Add a lease to a scenario."""
     db_scenario = (
-        db.query(Scenario)
-        .filter(Scenario.id == scenario_id, Scenario.is_deleted == False)
-        .first()
+        db.query(Scenario).filter(Scenario.id == scenario_id, Scenario.is_deleted == False).first()
     )
 
     if not db_scenario:
@@ -1158,9 +1156,7 @@ async def add_loan(
 ):
     """Add a loan to a scenario."""
     db_scenario = (
-        db.query(Scenario)
-        .filter(Scenario.id == scenario_id, Scenario.is_deleted == False)
-        .first()
+        db.query(Scenario).filter(Scenario.id == scenario_id, Scenario.is_deleted == False).first()
     )
 
     if not db_scenario:

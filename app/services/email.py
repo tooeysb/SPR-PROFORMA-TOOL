@@ -5,10 +5,9 @@ Falls back to console logging if SendGrid is not configured.
 """
 
 import logging
-from typing import Optional
 
 from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail, Email, To, Content
+from sendgrid.helpers.mail import Content, Email, Mail, To
 
 from app.config import get_settings
 
@@ -70,9 +69,7 @@ class EmailService:
                 logger.info(f"Email sent successfully to {to_email}")
                 return True
             else:
-                logger.error(
-                    f"Failed to send email: {response.status_code} - {response.body}"
-                )
+                logger.error(f"Failed to send email: {response.status_code} - {response.body}")
                 return False
 
         except Exception as e:
@@ -83,7 +80,7 @@ class EmailService:
         self,
         to_email: str,
         token: str,
-        inviter_name: Optional[str] = None,
+        inviter_name: str | None = None,
     ) -> bool:
         """
         Send an invitation email to a new user.
@@ -180,7 +177,7 @@ class EmailService:
 
         return self._send_email(to_email, subject, html_content)
 
-    def send_welcome_email(self, to_email: str, first_name: Optional[str] = None) -> bool:
+    def send_welcome_email(self, to_email: str, first_name: str | None = None) -> bool:
         """
         Send a welcome email after registration.
 
@@ -227,7 +224,7 @@ class EmailService:
 
 
 # Singleton instance
-_email_service: Optional[EmailService] = None
+_email_service: EmailService | None = None
 
 
 def get_email_service() -> EmailService:

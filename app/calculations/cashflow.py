@@ -4,10 +4,10 @@ Cash Flow Calculations
 Generates monthly cash flow projections for real estate investments.
 """
 
-from typing import List, Dict, Optional, Tuple
-from datetime import date
-from dateutil.relativedelta import relativedelta
 from dataclasses import dataclass
+from datetime import date
+
+from dateutil.relativedelta import relativedelta
 
 from app.calculations.amortization import calculate_payment
 
@@ -53,7 +53,7 @@ class Tenant:
 class RateCurve:
     """SOFR forward rate curve for floating rate calculations."""
 
-    rates: Dict[date, float]  # Date -> rate mapping
+    rates: dict[date, float]  # Date -> rate mapping
 
     def get_rate(self, period_date: date) -> float:
         """
@@ -99,9 +99,7 @@ def calculate_tenant_rent(
     Returns:
         Monthly NET rent in $000s (gross rent minus free rent deduction)
     """
-    gross_rent, free_rent_deduction = calculate_tenant_rent_detailed(
-        tenant, period, rent_growth
-    )
+    gross_rent, free_rent_deduction = calculate_tenant_rent_detailed(tenant, period, rent_growth)
     return gross_rent + free_rent_deduction  # deduction is negative
 
 
@@ -109,7 +107,7 @@ def calculate_tenant_rent_detailed(
     tenant: Tenant,
     period: int,
     rent_growth: float,
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     """
     Calculate monthly rent with detailed breakdown for a single tenant.
 
@@ -287,7 +285,7 @@ def calculate_ti_cost(tenant: Tenant, rent_growth: float, rollover_month: int) -
 
 
 def calculate_total_tenant_rent(
-    tenants: List[Tenant],
+    tenants: list[Tenant],
     period: int,
     rent_growth: float,
 ) -> float:
@@ -302,12 +300,10 @@ def calculate_total_tenant_rent(
     Returns:
         Total monthly rent in $000s
     """
-    return sum(
-        calculate_tenant_rent(tenant, period, rent_growth) for tenant in tenants
-    )
+    return sum(calculate_tenant_rent(tenant, period, rent_growth) for tenant in tenants)
 
 
-def generate_monthly_dates(start_date: date, num_months: int) -> List[date]:
+def generate_monthly_dates(start_date: date, num_months: int) -> list[date]:
     """Generate array of monthly dates."""
     return [start_date + relativedelta(months=i) for i in range(num_months + 1)]
 
@@ -430,11 +426,11 @@ def generate_cash_flows(
     expense_growth: float,
     exit_cap_rate: float,
     sales_cost_percent: float,
-    loan_amount: Optional[float] = None,
+    loan_amount: float | None = None,
     interest_rate: float = 0.0525,  # PRD Section 7.1: 5.25%
     io_months: int = 120,
     amortization_years: int = 30,
-    tenants: Optional[List[Tenant]] = None,
+    tenants: list[Tenant] | None = None,
     nnn_lease: bool = True,
     use_actual_365: bool = True,
     # === NEW: Variable OpEx ===
@@ -450,13 +446,13 @@ def generate_cash_flows(
     # === NEW: SOFR Integration ===
     interest_type: str = "fixed",  # "fixed" or "floating"
     floating_spread: float = 0.0,  # Spread over SOFR for floating rate
-    rate_curve: Optional[RateCurve] = None,  # SOFR curve for floating rate
+    rate_curve: RateCurve | None = None,  # SOFR curve for floating rate
     # === NEW: Capitalized Interest ===
     capitalize_interest: bool = False,  # Whether to capitalize unpaid interest
     # === NEW: Excel Parity Options ===
     property_tax_escalation_method: str = "continuous",  # "continuous" or "annual_step"
     include_month0_capex: bool = False,  # Include CapEx reserve in Month 0 (Excel: True)
-) -> List[Dict]:
+) -> list[dict]:
     """
     Generate monthly cash flow projections.
 
@@ -590,31 +586,33 @@ def generate_cash_flows(
         # === NOI ===
         noi = effective_revenue - total_expenses
 
-        period_data.append({
-            "period": period,
-            "period_date": period_date,
-            "base_rent": base_rent,
-            "parking_income": parking_income,
-            "storage_income": storage_income,
-            "other_income": other_income,
-            "reimbursement_fixed": reimbursement_fixed,
-            "reimbursement_variable": reimbursement_variable,
-            "total_reimbursement": total_reimbursement,
-            "potential_revenue": potential_revenue,
-            "vacancy_loss": vacancy_loss,
-            "effective_revenue": effective_revenue,
-            "fixed_opex": fixed_opex,
-            "variable_opex": var_opex,
-            "mgmt_fee": mgmt_fee,
-            "prop_tax": prop_tax,
-            "capex": capex,
-            "total_expenses": total_expenses,
-            "noi": noi,
-        })
+        period_data.append(
+            {
+                "period": period,
+                "period_date": period_date,
+                "base_rent": base_rent,
+                "parking_income": parking_income,
+                "storage_income": storage_income,
+                "other_income": other_income,
+                "reimbursement_fixed": reimbursement_fixed,
+                "reimbursement_variable": reimbursement_variable,
+                "total_reimbursement": total_reimbursement,
+                "potential_revenue": potential_revenue,
+                "vacancy_loss": vacancy_loss,
+                "effective_revenue": effective_revenue,
+                "fixed_opex": fixed_opex,
+                "variable_opex": var_opex,
+                "mgmt_fee": mgmt_fee,
+                "prop_tax": prop_tax,
+                "capex": capex,
+                "total_expenses": total_expenses,
+                "noi": noi,
+            }
+        )
 
     # === PRE-CALCULATE LEASE ROLLOVER EVENTS ===
     # Build a dict of period -> (lease_commissions, ti_costs) for one-time capital costs
-    rollover_costs: Dict[int, Tuple[float, float]] = {}
+    rollover_costs: dict[int, tuple[float, float]] = {}
     if tenants:
         for tenant in tenants:
             rollover_month = tenant.lease_end_month + 1
@@ -785,7 +783,7 @@ def generate_cash_flows(
     return cash_flows
 
 
-def annualize_cash_flows(monthly_cash_flows: List[Dict]) -> List[Dict]:
+def annualize_cash_flows(monthly_cash_flows: list[dict]) -> list[dict]:
     """
     Convert monthly cash flows to annual totals.
     """
@@ -831,14 +829,12 @@ def annualize_cash_flows(monthly_cash_flows: List[Dict]) -> List[Dict]:
 
 
 def sum_cash_flows(
-    cash_flows: List[Dict], field: str, start_period: int = 0, end_period: int = None
+    cash_flows: list[dict], field: str, start_period: int = 0, end_period: int = None
 ) -> float:
     """Sum a specific field across cash flows for a range of periods."""
     if end_period is None:
         end_period = len(cash_flows) - 1
 
     return sum(
-        cf.get(field, 0.0)
-        for cf in cash_flows
-        if start_period <= cf["period"] <= end_period
+        cf.get(field, 0.0) for cf in cash_flows if start_period <= cf["period"] <= end_period
     )

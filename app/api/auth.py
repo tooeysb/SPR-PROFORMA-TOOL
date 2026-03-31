@@ -3,26 +3,26 @@ Authentication API endpoints.
 """
 
 from datetime import datetime, timedelta
-from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 
-from app.db.database import get_db
-from app.db.models import User, InviteToken, PasswordResetToken, RefreshToken
-from app.auth.password import verify_password, hash_password
-from app.auth.jwt import create_access_token, create_refresh_token, decode_token
-from app.auth.tokens import generate_token, hash_token, verify_token_hash
 from app.auth.dependencies import get_current_user
-from app.services.email import get_email_service
+from app.auth.jwt import create_access_token, create_refresh_token, decode_token
+from app.auth.password import hash_password, verify_password
+from app.auth.tokens import generate_token, hash_token
 from app.config import get_settings
+from app.db.database import get_db
+from app.db.models import InviteToken, PasswordResetToken, RefreshToken, User
+from app.services.email import get_email_service
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 settings = get_settings()
 
 
 # === Pydantic Schemas ===
+
 
 class LoginRequest(BaseModel):
     email: EmailStr
@@ -38,8 +38,8 @@ class LoginResponse(BaseModel):
 class RegisterRequest(BaseModel):
     token: str
     password: str
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
+    first_name: str | None = None
+    last_name: str | None = None
 
 
 class ForgotPasswordRequest(BaseModel):
@@ -52,14 +52,14 @@ class ResetPasswordRequest(BaseModel):
 
 
 class RefreshRequest(BaseModel):
-    refresh_token: Optional[str] = None  # Can also be read from cookie
+    refresh_token: str | None = None  # Can also be read from cookie
 
 
 class UserResponse(BaseModel):
     id: str
     email: str
-    first_name: Optional[str]
-    last_name: Optional[str]
+    first_name: str | None
+    last_name: str | None
     role: str
     email_verified: bool
 
@@ -68,6 +68,7 @@ class UserResponse(BaseModel):
 
 
 # === Helper Functions ===
+
 
 def set_auth_cookies(response: Response, access_token: str, refresh_token: str):
     """Set httpOnly cookies for tokens."""
@@ -109,6 +110,7 @@ def user_to_dict(user: User) -> dict:
 
 # === Endpoints ===
 
+
 @router.post("/login", response_model=LoginResponse)
 async def login(
     request: LoginRequest,
@@ -121,10 +123,14 @@ async def login(
     Sets httpOnly cookies for browser-based auth.
     """
     # Find user
-    user = db.query(User).filter(
-        User.email == request.email.lower(),
-        User.is_deleted == False,
-    ).first()
+    user = (
+        db.query(User)
+        .filter(
+            User.email == request.email.lower(),
+            User.is_deleted == False,
+        )
+        .first()
+    )
 
     if not user or not user.hashed_password:
         raise HTTPException(
@@ -181,10 +187,14 @@ async def register(
     Complete user registration using an invite token.
     """
     # Find and validate invite token
-    invite = db.query(InviteToken).filter(
-        InviteToken.token == request.token,
-        InviteToken.is_deleted == False,
-    ).first()
+    invite = (
+        db.query(InviteToken)
+        .filter(
+            InviteToken.token == request.token,
+            InviteToken.is_deleted == False,
+        )
+        .first()
+    )
 
     if not invite:
         raise HTTPException(
@@ -261,11 +271,15 @@ async def forgot_password(
 
     Always returns success to prevent email enumeration.
     """
-    user = db.query(User).filter(
-        User.email == request.email.lower(),
-        User.is_deleted == False,
-        User.is_active == True,
-    ).first()
+    user = (
+        db.query(User)
+        .filter(
+            User.email == request.email.lower(),
+            User.is_deleted == False,
+            User.is_active == True,
+        )
+        .first()
+    )
 
     if user and user.hashed_password:  # Only for users who have completed registration
         # Generate reset token
@@ -275,7 +289,8 @@ async def forgot_password(
         reset_token = PasswordResetToken(
             user_id=user.id,
             token=token,
-            expires_at=datetime.utcnow() + timedelta(hours=settings.password_reset_token_expire_hours),
+            expires_at=datetime.utcnow()
+            + timedelta(hours=settings.password_reset_token_expire_hours),
         )
         db.add(reset_token)
         db.commit()
@@ -297,10 +312,14 @@ async def reset_password(
     Reset password using a reset token.
     """
     # Find and validate reset token
-    reset_token = db.query(PasswordResetToken).filter(
-        PasswordResetToken.token == request.token,
-        PasswordResetToken.is_deleted == False,
-    ).first()
+    reset_token = (
+        db.query(PasswordResetToken)
+        .filter(
+            PasswordResetToken.token == request.token,
+            PasswordResetToken.is_deleted == False,
+        )
+        .first()
+    )
 
     if not reset_token:
         raise HTTPException(
@@ -383,12 +402,16 @@ async def refresh_tokens(
     token_hash = hash_token(refresh_token)
 
     # Find token in database
-    stored_token = db.query(RefreshToken).filter(
-        RefreshToken.user_id == user_id,
-        RefreshToken.token_hash == token_hash,
-        RefreshToken.revoked_at == None,
-        RefreshToken.is_deleted == False,
-    ).first()
+    stored_token = (
+        db.query(RefreshToken)
+        .filter(
+            RefreshToken.user_id == user_id,
+            RefreshToken.token_hash == token_hash,
+            RefreshToken.revoked_at == None,
+            RefreshToken.is_deleted == False,
+        )
+        .first()
+    )
 
     if not stored_token:
         raise HTTPException(
@@ -403,11 +426,15 @@ async def refresh_tokens(
         )
 
     # Get user
-    user = db.query(User).filter(
-        User.id == user_id,
-        User.is_deleted == False,
-        User.is_active == True,
-    ).first()
+    user = (
+        db.query(User)
+        .filter(
+            User.id == user_id,
+            User.is_deleted == False,
+            User.is_active == True,
+        )
+        .first()
+    )
 
     if not user:
         raise HTTPException(

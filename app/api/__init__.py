@@ -4,7 +4,7 @@ API routes for the financial model.
 
 from fastapi import APIRouter
 
-from app.api import properties, scenarios, calculations, auth
+from app.api import auth, calculations, properties, scenarios
 from app.api.admin import users_router
 
 router = APIRouter()

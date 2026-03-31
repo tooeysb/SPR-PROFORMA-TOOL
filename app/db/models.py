@@ -2,31 +2,34 @@
 SQLAlchemy ORM models for the financial model.
 """
 
-from datetime import datetime, date
-from typing import Optional
+import enum
+import uuid
+from datetime import datetime
+
 from sqlalchemy import (
-    Column,
-    String,
-    Float,
-    Integer,
+    JSON,
     Boolean,
+    Column,
     Date,
     DateTime,
+    Float,
     ForeignKey,
-    JSON,
+    Integer,
+    String,
     Text,
-    event,
+)
+from sqlalchemy import (
     Enum as SQLEnum,
 )
 from sqlalchemy.orm import declarative_base, relationship
-import uuid
-import enum
 
 
 class UserRole(str, enum.Enum):
     """User role enumeration."""
+
     admin = "admin"
     user = "user"
+
 
 Base = declarative_base()
 
@@ -39,9 +42,7 @@ class AuditMixin:
     """Mixin for audit fields on all models."""
 
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     created_by = Column(String(255), nullable=True)
     updated_by = Column(String(255), nullable=True)
     is_deleted = Column(Boolean, default=False, nullable=False)

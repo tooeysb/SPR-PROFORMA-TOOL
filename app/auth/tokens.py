@@ -4,9 +4,8 @@ Token generation and hashing utilities.
 Used for invite tokens, password reset tokens, and refresh token storage.
 """
 
-import secrets
 import hashlib
-from typing import Tuple
+import secrets
 
 
 def generate_token(length: int = 32) -> str:
@@ -49,7 +48,7 @@ def verify_token_hash(token: str, token_hash: str) -> bool:
     return secrets.compare_digest(hash_token(token), token_hash)
 
 
-def generate_token_pair() -> Tuple[str, str]:
+def generate_token_pair() -> tuple[str, str]:
     """
     Generate a token and its hash.
 

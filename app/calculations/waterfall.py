@@ -14,9 +14,8 @@ Structure (matching 225 Worth Ave Excel):
 5. Final Split - LP 75% / GP 8.33%, 16.67% promote
 """
 
-from typing import List, Dict, Optional
-from datetime import date
 from dataclasses import dataclass
+from datetime import date
 
 
 @dataclass
@@ -25,6 +24,7 @@ class WaterfallTier:
 
     Excel Reference: Assumptions rows 76-79
     """
+
     name: str
     pref_return: float  # Annual preferred return rate (e.g., 0.05 for 5%)
     lp_split: float  # LP's share of distributions at this tier
@@ -37,23 +37,23 @@ DEFAULT_WATERFALL_TIERS = [
     WaterfallTier(
         name="Hurdle I",
         pref_return=0.05,  # 5% annual pref
-        lp_split=0.90,     # 90% to LP
-        gp_split=0.10,     # 10% to GP
-        gp_promote=0.00,   # No promote at Hurdle I
+        lp_split=0.90,  # 90% to LP
+        gp_split=0.10,  # 10% to GP
+        gp_promote=0.00,  # No promote at Hurdle I
     ),
     WaterfallTier(
         name="Hurdle II",
         pref_return=0.05,  # 5% annual pref
-        lp_split=0.75,     # 75% to LP
-        gp_split=0.0833,   # 8.33% to GP
-        gp_promote=0.1667, # 16.67% promote
+        lp_split=0.75,  # 75% to LP
+        gp_split=0.0833,  # 8.33% to GP
+        gp_promote=0.1667,  # 16.67% promote
     ),
     WaterfallTier(
         name="Hurdle III",
         pref_return=0.05,  # 5% annual pref
-        lp_split=0.75,     # 75% to LP
-        gp_split=0.0833,   # 8.33% to GP
-        gp_promote=0.1667, # 16.67% promote
+        lp_split=0.75,  # 75% to LP
+        gp_split=0.0833,  # 8.33% to GP
+        gp_promote=0.1667,  # 16.67% promote
     ),
 ]
 
@@ -85,22 +85,22 @@ def calculate_monthly_pref_rate(annual_rate: float, compound_monthly: bool = Fal
         return annual_rate / 12
     else:
         # Compound rate: (1 + annual)^(1/12) - 1
-        return (1 + annual_rate) ** (1/12) - 1
+        return (1 + annual_rate) ** (1 / 12) - 1
 
 
 def calculate_waterfall_distributions(
-    leveraged_cash_flows: List[float],
-    dates: List[date],
+    leveraged_cash_flows: list[float],
+    dates: list[date],
     total_equity: float,
     lp_share: float = 0.90,
     gp_share: float = 0.10,
     pref_return: float = 0.05,  # Backward compatible parameter
-    tiers: Optional[List[WaterfallTier]] = None,
-    final_split: Optional[WaterfallTier] = None,
+    tiers: list[WaterfallTier] | None = None,
+    final_split: WaterfallTier | None = None,
     compound_monthly: bool = False,
     # Backward compatibility aliases
-    hurdles: Optional[List[WaterfallTier]] = None,  # Alias for tiers
-) -> List[Dict]:
+    hurdles: list[WaterfallTier] | None = None,  # Alias for tiers
+) -> list[dict]:
     """
     Calculate waterfall distributions matching Excel 225 Worth Ave model.
 
@@ -185,8 +185,12 @@ def calculate_waterfall_distributions(
                     tier_balances[tier.name]["gp_balance"] += gp_equity * monthly_rate
                 else:
                     # Accrue on current tier balance
-                    tier_balances[tier.name]["lp_balance"] += tier_balances[tier.name]["lp_balance"] * monthly_rate
-                    tier_balances[tier.name]["gp_balance"] += tier_balances[tier.name]["gp_balance"] * monthly_rate
+                    tier_balances[tier.name]["lp_balance"] += (
+                        tier_balances[tier.name]["lp_balance"] * monthly_rate
+                    )
+                    tier_balances[tier.name]["gp_balance"] += (
+                        tier_balances[tier.name]["gp_balance"] * monthly_rate
+                    )
 
         # Initialize distribution components
         lp_capital_return = 0.0
@@ -212,7 +216,9 @@ def calculate_waterfall_distributions(
                 capital_payment = min(remaining, total_unreturned)
 
                 # Pro-rata by unreturned amounts
-                lp_pct = lp_capital_unreturned / total_unreturned if total_unreturned > 0 else lp_share
+                lp_pct = (
+                    lp_capital_unreturned / total_unreturned if total_unreturned > 0 else lp_share
+                )
 
                 lp_capital_return = capital_payment * lp_pct
                 gp_capital_return = capital_payment * (1 - lp_pct)
@@ -264,7 +270,9 @@ def calculate_waterfall_distributions(
                     # Excel Row 50: =-(L36+L47)/SUM($H36+$H47)*$H50
                     if tier.gp_promote > 0 and pref_paid > 0:
                         # Promote is proportional to pref paid
-                        promote_payment = min(remaining, pref_paid * tier.gp_promote / (tier.lp_split + tier.gp_split))
+                        promote_payment = min(
+                            remaining, pref_paid * tier.gp_promote / (tier.lp_split + tier.gp_split)
+                        )
                         tier_dist["gp_promote"] = promote_payment
                         gp_promote_total += promote_payment
                         remaining -= promote_payment
@@ -284,43 +292,45 @@ def calculate_waterfall_distributions(
         total_to_lp = lp_capital_return + lp_pref_total + lp_profit
         total_to_gp = gp_capital_return + gp_pref_total + gp_profit + gp_promote_total
 
-        distributions.append({
-            "period": i,
-            "date": period_date.isoformat() if period_date else None,
-            "cash_flow": round(cash_flow, 2),
-            # Capital return
-            "lp_capital_return": round(lp_capital_return, 2),
-            "gp_capital_return": round(gp_capital_return, 2),
-            # Preferred return (all tiers combined)
-            "lp_preferred_return": round(lp_pref_total, 2),
-            "gp_preferred_return": round(gp_pref_total, 2),
-            # Profit split
-            "lp_profit_share": round(lp_profit, 2),
-            "gp_profit_share": round(gp_profit, 2),
-            # GP promote (all tiers combined)
-            "gp_promote": round(gp_promote_total, 2),
-            # Totals
-            "total_to_lp": round(total_to_lp, 2),
-            "total_to_gp": round(total_to_gp, 2),
-            # Tracking
-            "lp_capital_unreturned": round(max(0, lp_capital_unreturned), 2),
-            "gp_capital_unreturned": round(max(0, gp_capital_unreturned), 2),
-            # Tier-level detail (for debugging)
-            "tier_distributions": tier_distributions,
-        })
+        distributions.append(
+            {
+                "period": i,
+                "date": period_date.isoformat() if period_date else None,
+                "cash_flow": round(cash_flow, 2),
+                # Capital return
+                "lp_capital_return": round(lp_capital_return, 2),
+                "gp_capital_return": round(gp_capital_return, 2),
+                # Preferred return (all tiers combined)
+                "lp_preferred_return": round(lp_pref_total, 2),
+                "gp_preferred_return": round(gp_pref_total, 2),
+                # Profit split
+                "lp_profit_share": round(lp_profit, 2),
+                "gp_profit_share": round(gp_profit, 2),
+                # GP promote (all tiers combined)
+                "gp_promote": round(gp_promote_total, 2),
+                # Totals
+                "total_to_lp": round(total_to_lp, 2),
+                "total_to_gp": round(total_to_gp, 2),
+                # Tracking
+                "lp_capital_unreturned": round(max(0, lp_capital_unreturned), 2),
+                "gp_capital_unreturned": round(max(0, gp_capital_unreturned), 2),
+                # Tier-level detail (for debugging)
+                "tier_distributions": tier_distributions,
+            }
+        )
 
     return distributions
 
 
 def calculate_simple_waterfall(
-    leveraged_cash_flows: List[float],
-    dates: List[date],
+    leveraged_cash_flows: list[float],
+    dates: list[date],
     total_equity: float,
     lp_share: float = 0.90,
     gp_share: float = 0.10,
     pref_return: float = 0.05,
     compound_monthly: bool = False,
-) -> List[Dict]:
+) -> list[dict]:
     """
     Calculate simple single-tier waterfall (legacy compatibility).
 
@@ -346,9 +356,7 @@ def calculate_simple_waterfall(
     )
 
 
-def extract_lp_cash_flows(
-    distributions: List[Dict], lp_equity: float
-) -> List[float]:
+def extract_lp_cash_flows(distributions: list[dict], lp_equity: float) -> list[float]:
     """Extract LP cash flows from distributions for IRR calculation."""
     cash_flows = []
     for i, dist in enumerate(distributions):
@@ -361,9 +369,7 @@ def extract_lp_cash_flows(
     return cash_flows
 
 
-def extract_gp_cash_flows(
-    distributions: List[Dict], gp_equity: float
-) -> List[float]:
+def extract_gp_cash_flows(distributions: list[dict], gp_equity: float) -> list[float]:
     """Extract GP cash flows from distributions for IRR calculation."""
     cash_flows = []
     for i, dist in enumerate(distributions):
@@ -375,7 +381,7 @@ def extract_gp_cash_flows(
     return cash_flows
 
 
-def calculate_waterfall_summary(distributions: List[Dict]) -> Dict:
+def calculate_waterfall_summary(distributions: list[dict]) -> dict:
     """Calculate summary metrics for waterfall."""
     return {
         "total_to_lp": sum(d["total_to_lp"] for d in distributions),

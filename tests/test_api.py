@@ -2,13 +2,14 @@
 Tests for properties, scenarios, and calculations API endpoints.
 """
 
-import pytest
 from datetime import date
+
+import pytest
 from fastapi.testclient import TestClient
 
-from app.main import app
-from app.db.models import Property, Scenario, User, UserRole
 from app.auth.password import hash_password
+from app.db.models import Property, Scenario, User, UserRole
+from app.main import app
 
 # Database setup is handled by conftest.py
 
@@ -92,6 +93,7 @@ def test_scenario(db_session, test_property):
 # PROPERTY API TESTS
 # ============================================================================
 
+
 class TestPropertyAPI:
     """Test property endpoints."""
 
@@ -165,6 +167,7 @@ class TestPropertyAPI:
 # SCENARIO API TESTS
 # ============================================================================
 
+
 class TestScenarioAPI:
     """Test scenario endpoints."""
 
@@ -177,9 +180,7 @@ class TestScenarioAPI:
 
     def test_list_scenarios_by_property(self, authenticated_client, test_property, test_scenario):
         """Test listing scenarios filtered by property."""
-        response = authenticated_client.get(
-            f"/api/scenarios?property_id={test_property.id}"
-        )
+        response = authenticated_client.get(f"/api/scenarios?property_id={test_property.id}")
         assert response.status_code == 200
         scenarios = response.json()
         # Handle both list of dicts and list of other types
@@ -234,6 +235,7 @@ class TestScenarioAPI:
 # ============================================================================
 # CALCULATIONS API TESTS
 # ============================================================================
+
 
 class TestCalculationsAPI:
     """Test calculation endpoints."""
@@ -356,6 +358,7 @@ class TestCalculationsAPI:
 # HEALTH CHECK TESTS
 # ============================================================================
 
+
 class TestHealthCheck:
     """Test health check endpoint."""
 
@@ -371,6 +374,7 @@ class TestHealthCheck:
 # ============================================================================
 # PAGE ROUTE TESTS
 # ============================================================================
+
 
 class TestPageRoutes:
     """Test HTML page routes."""

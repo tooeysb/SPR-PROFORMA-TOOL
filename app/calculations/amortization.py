@@ -5,14 +5,12 @@ Implements loan payment and amortization schedule calculations,
 matching Excel's PMT, IPMT, and PPMT functions.
 """
 
-from typing import List, Dict, Optional
 from datetime import date
+
 from dateutil.relativedelta import relativedelta
 
 
-def calculate_payment(
-    principal: float, annual_rate: float, amortization_months: int
-) -> float:
+def calculate_payment(principal: float, annual_rate: float, amortization_months: int) -> float:
     """
     Calculate monthly loan payment.
 
@@ -72,8 +70,8 @@ def generate_amortization_schedule(
     amortization_months: int,
     io_months: int = 0,
     total_months: int = 120,
-    start_date: Optional[date] = None,
-) -> List[Dict]:
+    start_date: date | None = None,
+) -> list[dict]:
     """
     Generate a full amortization schedule.
 
@@ -142,20 +140,14 @@ def generate_amortization_schedule(
     return schedule
 
 
-def calculate_total_interest(schedule: List[Dict]) -> float:
+def calculate_total_interest(schedule: list[dict]) -> float:
     """Calculate total interest paid over loan term."""
     return sum(row["interest"] for row in schedule)
 
 
-def calculate_debt_service(
-    schedule: List[Dict], start_period: int, end_period: int
-) -> float:
+def calculate_debt_service(schedule: list[dict], start_period: int, end_period: int) -> float:
     """Calculate total debt service (P+I) for a range of periods."""
-    return sum(
-        row["payment"]
-        for row in schedule
-        if start_period <= row["period"] <= end_period
-    )
+    return sum(row["payment"] for row in schedule if start_period <= row["period"] <= end_period)
 
 
 def calculate_dscr(noi: float, debt_service: float) -> float:
@@ -174,9 +166,7 @@ def calculate_dscr(noi: float, debt_service: float) -> float:
     return noi / debt_service
 
 
-def calculate_loan_constant(
-    principal: float, annual_rate: float, amortization_years: int
-) -> float:
+def calculate_loan_constant(principal: float, annual_rate: float, amortization_years: int) -> float:
     """Calculate loan constant (annual debt service / loan amount)."""
     monthly_payment = calculate_payment(principal, annual_rate, amortization_years * 12)
     annual_debt_service = monthly_payment * 12

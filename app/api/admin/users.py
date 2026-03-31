@@ -3,18 +3,17 @@ Admin user management endpoints.
 """
 
 from datetime import datetime, timedelta
-from typing import Optional, List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 
-from app.db.database import get_db
-from app.db.models import User, UserRole, InviteToken
 from app.auth.dependencies import require_admin
 from app.auth.tokens import generate_token
-from app.services.email import get_email_service
 from app.config import get_settings
+from app.db.database import get_db
+from app.db.models import InviteToken, User, UserRole
+from app.services.email import get_email_service
 
 router = APIRouter(prefix="/api/admin/users", tags=["admin"])
 settings = get_settings()
@@ -22,16 +21,17 @@ settings = get_settings()
 
 # === Pydantic Schemas ===
 
+
 class UserListItem(BaseModel):
     id: str
     email: str
-    first_name: Optional[str]
-    last_name: Optional[str]
+    first_name: str | None
+    last_name: str | None
     role: str
     is_active: bool
     email_verified: bool
     created_at: datetime
-    last_login_at: Optional[datetime]
+    last_login_at: datetime | None
 
     class Config:
         from_attributes = True
@@ -39,21 +39,21 @@ class UserListItem(BaseModel):
 
 class UserDetail(UserListItem):
     updated_at: datetime
-    password_changed_at: Optional[datetime]
+    password_changed_at: datetime | None
 
 
 class InviteUserRequest(BaseModel):
     email: EmailStr
     role: str = "user"
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
+    first_name: str | None = None
+    last_name: str | None = None
 
 
 class UpdateUserRequest(BaseModel):
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    role: Optional[str] = None
-    is_active: Optional[bool] = None
+    first_name: str | None = None
+    last_name: str | None = None
+    role: str | None = None
+    is_active: bool | None = None
 
 
 class InviteResponse(BaseModel):
@@ -64,7 +64,8 @@ class InviteResponse(BaseModel):
 
 # === Endpoints ===
 
-@router.get("", response_model=List[UserListItem])
+
+@router.get("", response_model=list[UserListItem])
 async def list_users(
     skip: int = 0,
     limit: int = 100,
@@ -108,10 +109,14 @@ async def invite_user(
     Invite a new user via email (admin only).
     """
     # Check if user already exists
-    existing = db.query(User).filter(
-        User.email == request.email.lower(),
-        User.is_deleted == False,
-    ).first()
+    existing = (
+        db.query(User)
+        .filter(
+            User.email == request.email.lower(),
+            User.is_deleted == False,
+        )
+        .first()
+    )
 
     if existing:
         raise HTTPException(
@@ -154,7 +159,9 @@ async def invite_user(
 
     # Send invite email
     email_service = get_email_service()
-    inviter_name = f"{admin.first_name} {admin.last_name}".strip() if admin.first_name else admin.email
+    inviter_name = (
+        f"{admin.first_name} {admin.last_name}".strip() if admin.first_name else admin.email
+    )
     email_service.send_invite_email(user.email, token, inviter_name)
 
     return InviteResponse(
@@ -173,10 +180,14 @@ async def get_user(
     """
     Get user details (admin only).
     """
-    user = db.query(User).filter(
-        User.id == user_id,
-        User.is_deleted == False,
-    ).first()
+    user = (
+        db.query(User)
+        .filter(
+            User.id == user_id,
+            User.is_deleted == False,
+        )
+        .first()
+    )
 
     if not user:
         raise HTTPException(
@@ -209,10 +220,14 @@ async def update_user(
     """
     Update user (admin only).
     """
-    user = db.query(User).filter(
-        User.id == user_id,
-        User.is_deleted == False,
-    ).first()
+    user = (
+        db.query(User)
+        .filter(
+            User.id == user_id,
+            User.is_deleted == False,
+        )
+        .first()
+    )
 
     if not user:
         raise HTTPException(
@@ -277,10 +292,14 @@ async def delete_user(
     """
     Soft delete user (admin only).
     """
-    user = db.query(User).filter(
-        User.id == user_id,
-        User.is_deleted == False,
-    ).first()
+    user = (
+        db.query(User)
+        .filter(
+            User.id == user_id,
+            User.is_deleted == False,
+        )
+        .first()
+    )
 
     if not user:
         raise HTTPException(
@@ -312,10 +331,14 @@ async def resend_invite(
     """
     Resend invite email to a user who hasn't completed registration (admin only).
     """
-    user = db.query(User).filter(
-        User.id == user_id,
-        User.is_deleted == False,
-    ).first()
+    user = (
+        db.query(User)
+        .filter(
+            User.id == user_id,
+            User.is_deleted == False,
+        )
+        .first()
+    )
 
     if not user:
         raise HTTPException(
@@ -348,7 +371,9 @@ async def resend_invite(
 
     # Send invite email
     email_service = get_email_service()
-    inviter_name = f"{admin.first_name} {admin.last_name}".strip() if admin.first_name else admin.email
+    inviter_name = (
+        f"{admin.first_name} {admin.last_name}".strip() if admin.first_name else admin.email
+    )
     email_service.send_invite_email(user.email, token, inviter_name)
 
     return {"message": "Invitation resent successfully"}

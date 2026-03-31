@@ -2,14 +2,16 @@
 Seed the database with the 225 Worth Ave demo property.
 Based on the PRD documentation.
 """
-import sys
+
 import os
+import sys
 from datetime import date
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.db.database import SessionLocal
 from app.db.models import Property, Scenario, User
+
 
 def main():
     db = SessionLocal()
@@ -85,7 +87,7 @@ def main():
 
         db.commit()
         print("\nDemo property and scenario created successfully!")
-        print(f"\nYou can now access it at:")
+        print("\nYou can now access it at:")
         print(f"  https://re-fin-model-225worth-3348ecdc48e8.herokuapp.com/model/{property.id}")
 
     except Exception as e:
@@ -94,6 +96,7 @@ def main():
         raise
     finally:
         db.close()
+
 
 if __name__ == "__main__":
     main()

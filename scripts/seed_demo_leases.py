@@ -2,14 +2,16 @@
 Seed tenant leases for the 225 Worth Ave demo property.
 Based on the PRD documentation.
 """
-import sys
+
 import os
+import sys
 from datetime import date
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.db.database import SessionLocal
-from app.db.models import Property, Scenario, Lease
+from app.db.models import Lease, Property, Scenario
+
 
 def main():
     db = SessionLocal()
@@ -24,10 +26,11 @@ def main():
         print(f"Found property: {property.name} (ID: {property.id})")
 
         # Find the Base Case scenario
-        scenario = db.query(Scenario).filter(
-            Scenario.property_id == property.id,
-            Scenario.is_base_case == True
-        ).first()
+        scenario = (
+            db.query(Scenario)
+            .filter(Scenario.property_id == property.id, Scenario.is_base_case == True)
+            .first()
+        )
         if not scenario:
             print("Base Case scenario not found!")
             return
@@ -88,12 +91,11 @@ def main():
         ]
 
         for lease_data in leases_data:
-            lease = Lease(
-                scenario_id=scenario.id,
-                **lease_data
-            )
+            lease = Lease(scenario_id=scenario.id, **lease_data)
             db.add(lease)
-            print(f"Created lease: {lease_data['tenant_name']} ({lease_data['rsf']} SF @ ${lease_data['base_rent_psf']}/SF)")
+            print(
+                f"Created lease: {lease_data['tenant_name']} ({lease_data['rsf']} SF @ ${lease_data['base_rent_psf']}/SF)"
+            )
 
         db.commit()
         print(f"\nSuccessfully created {len(leases_data)} tenant leases!")
@@ -105,6 +107,7 @@ def main():
         raise
     finally:
         db.close()
+
 
 if __name__ == "__main__":
     main()

@@ -2,10 +2,10 @@
 Property management API endpoints.
 """
 
-from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel
-from typing import Optional, List
 from datetime import date
+
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
@@ -18,36 +18,36 @@ class PropertyCreate(BaseModel):
     """Schema for creating a property."""
 
     name: str
-    address_street: Optional[str] = None
-    address_city: Optional[str] = None
-    address_state: Optional[str] = None
-    address_zip: Optional[str] = None
+    address_street: str | None = None
+    address_city: str | None = None
+    address_state: str | None = None
+    address_zip: str | None = None
     property_type: str = "retail"
-    land_sf: Optional[float] = None
-    building_sf: Optional[float] = None
-    net_rentable_sf: Optional[float] = None
-    year_built: Optional[int] = None
-    acquisition_date: Optional[date] = None
-    purchase_price: Optional[float] = None
+    land_sf: float | None = None
+    building_sf: float | None = None
+    net_rentable_sf: float | None = None
+    year_built: int | None = None
+    acquisition_date: date | None = None
+    purchase_price: float | None = None
     closing_costs_percent: float = 0.02
 
 
 class PropertyUpdate(BaseModel):
     """Schema for updating a property."""
 
-    name: Optional[str] = None
-    address_street: Optional[str] = None
-    address_city: Optional[str] = None
-    address_state: Optional[str] = None
-    address_zip: Optional[str] = None
-    property_type: Optional[str] = None
-    land_sf: Optional[float] = None
-    building_sf: Optional[float] = None
-    net_rentable_sf: Optional[float] = None
-    year_built: Optional[int] = None
-    acquisition_date: Optional[date] = None
-    purchase_price: Optional[float] = None
-    closing_costs_percent: Optional[float] = None
+    name: str | None = None
+    address_street: str | None = None
+    address_city: str | None = None
+    address_state: str | None = None
+    address_zip: str | None = None
+    property_type: str | None = None
+    land_sf: float | None = None
+    building_sf: float | None = None
+    net_rentable_sf: float | None = None
+    year_built: int | None = None
+    acquisition_date: date | None = None
+    purchase_price: float | None = None
+    closing_costs_percent: float | None = None
 
 
 class PropertyResponse(BaseModel):
@@ -55,20 +55,20 @@ class PropertyResponse(BaseModel):
 
     id: str
     name: str
-    address_street: Optional[str]
-    address_city: Optional[str]
-    address_state: Optional[str]
-    address_zip: Optional[str]
+    address_street: str | None
+    address_city: str | None
+    address_state: str | None
+    address_zip: str | None
     property_type: str
-    land_sf: Optional[float]
-    building_sf: Optional[float]
-    net_rentable_sf: Optional[float]
-    year_built: Optional[int]
-    acquisition_date: Optional[date]
-    purchase_price: Optional[float]
-    closing_costs_percent: Optional[float]
-    created_at: Optional[str] = None
-    updated_at: Optional[str] = None
+    land_sf: float | None
+    building_sf: float | None
+    net_rentable_sf: float | None
+    year_built: int | None
+    acquisition_date: date | None
+    purchase_price: float | None
+    closing_costs_percent: float | None
+    created_at: str | None = None
+    updated_at: str | None = None
 
     class Config:
         from_attributes = True
@@ -77,7 +77,7 @@ class PropertyResponse(BaseModel):
 class PropertyListResponse(BaseModel):
     """Response for listing properties."""
 
-    properties: List[PropertyResponse]
+    properties: list[PropertyResponse]
     total: int
 
 
@@ -107,7 +107,7 @@ def property_to_response(prop: Property) -> PropertyResponse:
 async def list_properties(
     skip: int = 0,
     limit: int = 100,
-    property_type: Optional[str] = None,
+    property_type: str | None = None,
     db: Session = Depends(get_db),
 ):
     """List all properties with optional filtering."""
@@ -161,9 +161,7 @@ async def get_property(
 ):
     """Get a property by ID."""
     db_property = (
-        db.query(Property)
-        .filter(Property.id == property_id, Property.is_deleted == False)
-        .first()
+        db.query(Property).filter(Property.id == property_id, Property.is_deleted == False).first()
     )
 
     if not db_property:
@@ -180,9 +178,7 @@ async def update_property(
 ):
     """Update a property."""
     db_property = (
-        db.query(Property)
-        .filter(Property.id == property_id, Property.is_deleted == False)
-        .first()
+        db.query(Property).filter(Property.id == property_id, Property.is_deleted == False).first()
     )
 
     if not db_property:
@@ -206,9 +202,7 @@ async def delete_property(
 ):
     """Soft delete a property."""
     db_property = (
-        db.query(Property)
-        .filter(Property.id == property_id, Property.is_deleted == False)
-        .first()
+        db.query(Property).filter(Property.id == property_id, Property.is_deleted == False).first()
     )
 
     if not db_property:
@@ -228,9 +222,7 @@ async def list_property_scenarios(
 ):
     """List all scenarios for a property."""
     db_property = (
-        db.query(Property)
-        .filter(Property.id == property_id, Property.is_deleted == False)
-        .first()
+        db.query(Property).filter(Property.id == property_id, Property.is_deleted == False).first()
     )
 
     if not db_property:

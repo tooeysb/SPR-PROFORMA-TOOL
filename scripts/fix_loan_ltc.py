@@ -1,13 +1,15 @@
 """
 Fix the loan LTC ratio that wasn't set.
 """
-import sys
+
 import os
+import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.db.database import SessionLocal
 from app.db.models import Loan
+
 
 def main():
     db = SessionLocal()
@@ -35,6 +37,7 @@ def main():
         raise
     finally:
         db.close()
+
 
 if __name__ == "__main__":
     main()

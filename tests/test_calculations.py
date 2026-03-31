@@ -2,37 +2,39 @@
 Comprehensive tests for financial calculation engine.
 """
 
-import pytest
 from datetime import date, timedelta
-from app.calculations.irr import (
-    calculate_irr,
-    calculate_xirr,
-    calculate_npv,
-    calculate_xnpv,
-    calculate_multiple,
-    calculate_profit,
-    monthly_to_annual_irr,
-    annual_to_monthly_irr,
-)
+
+import pytest
+
 from app.calculations.amortization import calculate_payment, generate_amortization_schedule
 from app.calculations.cashflow import (
-    generate_cash_flows,
-    calculate_escalation_factor,
-    generate_monthly_dates,
     annualize_cash_flows,
+    calculate_escalation_factor,
+    generate_cash_flows,
+    generate_monthly_dates,
     sum_cash_flows,
+)
+from app.calculations.irr import (
+    annual_to_monthly_irr,
+    calculate_irr,
+    calculate_multiple,
+    calculate_npv,
+    calculate_profit,
+    calculate_xirr,
+    calculate_xnpv,
+    monthly_to_annual_irr,
 )
 from app.calculations.waterfall import (
     calculate_waterfall_distributions,
-    extract_lp_cash_flows,
-    extract_gp_cash_flows,
     calculate_waterfall_summary,
+    extract_gp_cash_flows,
+    extract_lp_cash_flows,
 )
-
 
 # ============================================================================
 # IRR CALCULATION TESTS
 # ============================================================================
+
 
 class TestIRRCalculations:
     """Test IRR calculation functions."""
@@ -98,7 +100,7 @@ class TestIRRCalculations:
         dates = [
             date(2025, 1, 1),
             date(2025, 6, 15),  # ~5.5 months
-            date(2026, 3, 1),   # ~14 months from start
+            date(2026, 3, 1),  # ~14 months from start
         ]
         cash_flows = [-100, 30, 90]
         xirr = calculate_xirr(cash_flows, dates)
@@ -171,6 +173,7 @@ class TestIRRCalculations:
 # ============================================================================
 # AMORTIZATION TESTS
 # ============================================================================
+
 
 class TestAmortization:
     """Test loan amortization calculations."""
@@ -259,7 +262,7 @@ class TestAmortization:
         )
         # Interest should decrease period over period
         for i in range(1, len(schedule)):
-            assert schedule[i]["interest"] <= schedule[i-1]["interest"]
+            assert schedule[i]["interest"] <= schedule[i - 1]["interest"]
 
     def test_amortization_increasing_principal(self):
         """Test that principal payments increase over time (amortizing loan)."""
@@ -272,12 +275,13 @@ class TestAmortization:
         )
         # Principal should increase period over period
         for i in range(1, len(schedule)):
-            assert schedule[i]["principal"] >= schedule[i-1]["principal"]
+            assert schedule[i]["principal"] >= schedule[i - 1]["principal"]
 
 
 # ============================================================================
 # CASH FLOW TESTS
 # ============================================================================
+
 
 class TestCashFlows:
     """Test cash flow generation."""
@@ -513,13 +517,14 @@ class TestCashFlows:
 # WATERFALL TESTS
 # ============================================================================
 
+
 class TestWaterfall:
     """Test waterfall distribution calculations."""
 
     def test_waterfall_basic_distribution(self):
         """Test basic waterfall with simple cash flows."""
         cash_flows = [-100, 10, 10, 10, 10, 110]
-        dates = [date(2025, 1, 1) + timedelta(days=30*i) for i in range(6)]
+        dates = [date(2025, 1, 1) + timedelta(days=30 * i) for i in range(6)]
 
         distributions = calculate_waterfall_distributions(
             leveraged_cash_flows=cash_flows,
@@ -554,7 +559,7 @@ class TestWaterfall:
         """Test that preferred return accrues correctly."""
         # No distributions for first few periods
         cash_flows = [-100, 0, 0, 0, 200]
-        dates = [date(2025, 1, 1) + timedelta(days=30*i) for i in range(5)]
+        dates = [date(2025, 1, 1) + timedelta(days=30 * i) for i in range(5)]
 
         distributions = calculate_waterfall_distributions(
             leveraged_cash_flows=cash_flows,
@@ -566,14 +571,15 @@ class TestWaterfall:
         )
 
         # Pref should accrue and then be paid
-        total_pref_paid = sum(d["lp_preferred_return"] + d["gp_preferred_return"]
-                             for d in distributions)
+        total_pref_paid = sum(
+            d["lp_preferred_return"] + d["gp_preferred_return"] for d in distributions
+        )
         assert total_pref_paid > 0
 
     def test_waterfall_return_of_capital(self):
         """Test that return of capital happens before profit split."""
         cash_flows = [-100, 0, 0, 150]
-        dates = [date(2025, 1, 1) + timedelta(days=30*i) for i in range(4)]
+        dates = [date(2025, 1, 1) + timedelta(days=30 * i) for i in range(4)]
 
         distributions = calculate_waterfall_distributions(
             leveraged_cash_flows=cash_flows,
@@ -586,8 +592,7 @@ class TestWaterfall:
 
         # Total equity paydown should equal initial equity
         total_equity_paydown = sum(
-            d["lp_equity_paydown"] + d["gp_equity_paydown"]
-            for d in distributions
+            d["lp_equity_paydown"] + d["gp_equity_paydown"] for d in distributions
         )
         assert abs(total_equity_paydown - 100) < 0.01
 
@@ -627,16 +632,24 @@ class TestWaterfall:
         """Test waterfall summary calculation."""
         distributions = [
             {
-                "lp_equity_paydown": 45, "gp_equity_paydown": 5,
-                "lp_preferred_return": 9, "gp_preferred_return": 1,
-                "lp_profit": 36, "gp_profit": 4,
-                "total_to_lp": 90, "total_to_gp": 10,
+                "lp_equity_paydown": 45,
+                "gp_equity_paydown": 5,
+                "lp_preferred_return": 9,
+                "gp_preferred_return": 1,
+                "lp_profit": 36,
+                "gp_profit": 4,
+                "total_to_lp": 90,
+                "total_to_gp": 10,
             },
             {
-                "lp_equity_paydown": 45, "gp_equity_paydown": 5,
-                "lp_preferred_return": 0, "gp_preferred_return": 0,
-                "lp_profit": 45, "gp_profit": 5,
-                "total_to_lp": 90, "total_to_gp": 10,
+                "lp_equity_paydown": 45,
+                "gp_equity_paydown": 5,
+                "lp_preferred_return": 0,
+                "gp_preferred_return": 0,
+                "lp_profit": 45,
+                "gp_profit": 5,
+                "total_to_lp": 90,
+                "total_to_gp": 10,
             },
         ]
 
@@ -652,6 +665,7 @@ class TestWaterfall:
 # ============================================================================
 # INTEGRATION TESTS
 # ============================================================================
+
 
 class TestIntegration:
     """Integration tests for full calculation pipeline."""
@@ -797,6 +811,7 @@ class TestIntegration:
 # ============================================================================
 # EDGE CASE TESTS
 # ============================================================================
+
 
 class TestEdgeCases:
     """Test edge cases and boundary conditions."""

@@ -1,12 +1,15 @@
 """
 Assign all existing properties to the admin user.
 """
-import sys
+
 import os
+import sys
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.db.database import SessionLocal
 from app.db.models import Property, User
+
 
 def main():
     db = SessionLocal()
@@ -35,7 +38,7 @@ def main():
             if p.owner_id != admin.id:
                 p.owner_id = admin.id
                 updated += 1
-                print(f"    -> Assigned to admin")
+                print("    -> Assigned to admin")
 
         if updated > 0:
             db.commit()
@@ -45,6 +48,7 @@ def main():
 
     finally:
         db.close()
+
 
 if __name__ == "__main__":
     main()

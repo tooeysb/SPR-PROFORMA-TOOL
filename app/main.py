@@ -3,17 +3,16 @@ Main FastAPI application entry point.
 """
 
 from contextlib import asynccontextmanager
-from typing import Optional
 
 from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse
 
-from app.config import get_settings
 from app.api import router as api_router
-from app.api.auth import router as auth_router
 from app.api.admin.users import router as admin_users_router
+from app.api.auth import router as auth_router
+from app.config import get_settings
 from app.db.database import init_db
 
 settings = get_settings()
@@ -59,9 +58,7 @@ async def home(request: Request):
 
 
 @app.get("/model/{model_id}", response_class=HTMLResponse)
-async def model_view(
-    request: Request, model_id: str, property_id: Optional[str] = None
-):
+async def model_view(request: Request, model_id: str, property_id: str | None = None):
     """Render the financial model editor."""
     return templates.TemplateResponse(
         "model.html",
@@ -76,6 +73,7 @@ async def health_check():
 
 
 # === Auth Page Routes ===
+
 
 @app.get("/auth/login", response_class=HTMLResponse)
 async def login_page(request: Request):
@@ -102,6 +100,7 @@ async def reset_password_page(request: Request):
 
 
 # === Admin Page Routes ===
+
 
 @app.get("/admin/users", response_class=HTMLResponse)
 async def admin_users_page(request: Request):

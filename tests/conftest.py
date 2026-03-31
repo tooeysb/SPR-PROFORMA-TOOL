@@ -2,9 +2,10 @@
 Pytest configuration and shared fixtures.
 """
 
-import pytest
-import sys
 import os
+import sys
+
+import pytest
 
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -13,13 +14,13 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.main import app
 from app.db.database import get_db
+
 # Import all models to ensure all tables are created
 from app.db.models import (
-    Base, User, UserRole, Property, Scenario, Lease, Loan,
-    InviteToken, PasswordResetToken, RefreshToken
+    Base,
 )
+from app.main import app
 
 
 def pytest_configure(config):

@@ -7,16 +7,17 @@ Benchmark values are extracted from the source Excel file.
 See: docs/225_Worth_Ave_Model_Documentation_PRD.md Section 7 for full specification.
 """
 
-import pytest
 from datetime import date
+
+import pytest
+
+from app.calculations import irr
 from app.calculations.cashflow import (
     Tenant,
     calculate_tenant_rent,
     calculate_total_tenant_rent,
     generate_cash_flows,
 )
-from app.calculations import irr
-
 
 # =============================================================================
 # BENCHMARK DATA FROM EXCEL MODEL
@@ -405,9 +406,7 @@ class TestNNNReimbursements:
         # Reimbursement should approximately equal reimbursable expenses
         reimbursement = nnn_cf[1]["reimbursement_revenue"]
         reimbursable_expenses = (
-            nnn_cf[1]["fixed_opex"]
-            + nnn_cf[1]["property_tax"]
-            + nnn_cf[1]["management_fee"]
+            nnn_cf[1]["fixed_opex"] + nnn_cf[1]["property_tax"] + nnn_cf[1]["management_fee"]
         )
         assert abs(reimbursement - reimbursable_expenses) < 1
 

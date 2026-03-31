@@ -4,16 +4,14 @@ IRR and NPV Calculations
 Implements IRR using Newton-Raphson method, matching Excel's IRR/XIRR functions.
 """
 
-from typing import List, Optional
 from datetime import date
-import numpy as np
 
 MAX_ITERATIONS = 100
 TOLERANCE = 1e-7
 DEFAULT_GUESS = 0.1
 
 
-def calculate_npv(cash_flows: List[float], discount_rate: float) -> float:
+def calculate_npv(cash_flows: list[float], discount_rate: float) -> float:
     """
     Calculate NPV (Net Present Value) of cash flows.
 
@@ -30,7 +28,7 @@ def calculate_npv(cash_flows: List[float], discount_rate: float) -> float:
     return npv
 
 
-def _npv_derivative(cash_flows: List[float], rate: float) -> float:
+def _npv_derivative(cash_flows: list[float], rate: float) -> float:
     """Calculate derivative of NPV with respect to rate (for Newton-Raphson)."""
     dnpv = 0.0
     for period, cf in enumerate(cash_flows):
@@ -38,7 +36,7 @@ def _npv_derivative(cash_flows: List[float], rate: float) -> float:
     return dnpv
 
 
-def calculate_irr(cash_flows: List[float], guess: float = DEFAULT_GUESS) -> float:
+def calculate_irr(cash_flows: list[float], guess: float = DEFAULT_GUESS) -> float:
     """
     Calculate IRR (Internal Rate of Return) using Newton-Raphson method.
 
@@ -88,9 +86,7 @@ def _days_between(date1: date, date2: date) -> int:
     return delta.days
 
 
-def calculate_xnpv(
-    cash_flows: List[float], dates: List[date], discount_rate: float
-) -> float:
+def calculate_xnpv(cash_flows: list[float], dates: list[date], discount_rate: float) -> float:
     """Calculate XNPV (NPV with specific dates)."""
     if len(cash_flows) != len(dates):
         raise ValueError("Cash flows and dates arrays must have same length")
@@ -106,9 +102,7 @@ def calculate_xnpv(
     return xnpv
 
 
-def _xnpv_derivative(
-    cash_flows: List[float], dates: List[date], rate: float
-) -> float:
+def _xnpv_derivative(cash_flows: list[float], dates: list[date], rate: float) -> float:
     """Calculate derivative of XNPV with respect to rate."""
     base_date = dates[0]
     dxnpv = 0.0
@@ -122,8 +116,8 @@ def _xnpv_derivative(
 
 
 def _try_xirr_with_guess(
-    cash_flows: List[float], dates: List[date], guess: float
-) -> Optional[float]:
+    cash_flows: list[float], dates: list[date], guess: float
+) -> float | None:
     """
     Try to calculate XIRR with a specific initial guess.
 
@@ -163,7 +157,7 @@ def _try_xirr_with_guess(
 
 
 def calculate_xirr(
-    cash_flows: List[float], dates: List[date], guess: float = DEFAULT_GUESS
+    cash_flows: list[float], dates: list[date], guess: float = DEFAULT_GUESS
 ) -> float:
     """
     Calculate XIRR (IRR with specific dates).
@@ -234,7 +228,7 @@ def calculate_xirr(
     raise ValueError("XIRR calculation did not converge")
 
 
-def calculate_multiple(cash_flows: List[float]) -> float:
+def calculate_multiple(cash_flows: list[float]) -> float:
     """
     Calculate equity multiple.
 
@@ -253,7 +247,7 @@ def calculate_multiple(cash_flows: List[float]) -> float:
     return total_inflows / total_outflows
 
 
-def calculate_profit(cash_flows: List[float]) -> float:
+def calculate_profit(cash_flows: list[float]) -> float:
     """Calculate profit (total inflows minus total outflows)."""
     return sum(cash_flows)
 
