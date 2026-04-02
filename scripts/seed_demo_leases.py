@@ -99,7 +99,7 @@ def main():
 
         db.commit()
         print(f"\nSuccessfully created {len(leases_data)} tenant leases!")
-        print(f"Total leased SF: {sum(l['rsf'] for l in leases_data):,}")
+        print(f"Total leased SF: {sum(ld['rsf'] for ld in leases_data):,}")
 
     except Exception as e:
         db.rollback()

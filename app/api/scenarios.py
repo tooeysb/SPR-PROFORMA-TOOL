@@ -276,22 +276,22 @@ def scenario_to_response(scenario: Scenario, include_children: bool = True) -> d
     if include_children:
         response["leases"] = [
             {
-                "id": l.id,
-                "tenant_name": l.tenant_name,
-                "space_id": l.space_id,
-                "rsf": l.rsf,
-                "base_rent_psf": l.base_rent_psf,
-                "market_rent_psf": l.market_rent_psf,
-                "lease_start": l.lease_start,
-                "lease_end": l.lease_end,
-                "escalation_type": l.escalation_type,
-                "escalation_value": l.escalation_value,
-                "free_rent_months": l.free_rent_months,
-                "ti_allowance_psf": l.ti_allowance_psf,
-                "reimbursement_type": l.reimbursement_type,
-                "is_vacant": l.is_vacant or False,
+                "id": lease.id,
+                "tenant_name": lease.tenant_name,
+                "space_id": lease.space_id,
+                "rsf": lease.rsf,
+                "base_rent_psf": lease.base_rent_psf,
+                "market_rent_psf": lease.market_rent_psf,
+                "lease_start": lease.lease_start,
+                "lease_end": lease.lease_end,
+                "escalation_type": lease.escalation_type,
+                "escalation_value": lease.escalation_value,
+                "free_rent_months": lease.free_rent_months,
+                "ti_allowance_psf": lease.ti_allowance_psf,
+                "reimbursement_type": lease.reimbursement_type,
+                "is_vacant": lease.is_vacant or False,
             }
-            for l in scenario.leases.filter_by(is_deleted=False).all()
+            for lease in scenario.leases.filter_by(is_deleted=False).all()
         ]
 
         response["loans"] = [
@@ -320,7 +320,7 @@ def calculate_scenario_returns(scenario: Scenario, db: Session) -> dict:
 
     # Get total SF from leases
     leases = scenario.leases.filter_by(is_deleted=False).all()
-    total_sf = sum(l.rsf or 0 for l in leases)
+    total_sf = sum(lease.rsf or 0 for lease in leases)
 
     if total_sf == 0:
         total_sf = op_assumptions.get("total_sf", 10000)
@@ -328,7 +328,7 @@ def calculate_scenario_returns(scenario: Scenario, db: Session) -> dict:
     # Get weighted average in-place rent
     in_place_rent = 0
     if leases:
-        weighted_rent = sum((l.rsf or 0) * (l.base_rent_psf or 0) for l in leases)
+        weighted_rent = sum((lease.rsf or 0) * (lease.base_rent_psf or 0) for lease in leases)
         in_place_rent = weighted_rent / total_sf if total_sf > 0 else 0
     else:
         in_place_rent = op_assumptions.get("in_place_rent_psf", 200)
@@ -939,10 +939,10 @@ async def get_scenario_cashflows(
     leases = db_scenario.leases.filter_by(is_deleted=False).all()
     loans = db_scenario.loans.filter_by(is_deleted=False).all()
 
-    total_sf = sum(l.rsf or 0 for l in leases) or op_assumptions.get("total_sf", 10000)
+    total_sf = sum(lease.rsf or 0 for lease in leases) or op_assumptions.get("total_sf", 10000)
     in_place_rent = 0
     if leases:
-        weighted_rent = sum((l.rsf or 0) * (l.base_rent_psf or 0) for l in leases)
+        weighted_rent = sum((lease.rsf or 0) * (lease.base_rent_psf or 0) for lease in leases)
         in_place_rent = weighted_rent / total_sf if total_sf > 0 else 0
     else:
         in_place_rent = op_assumptions.get("in_place_rent_psf", 200)

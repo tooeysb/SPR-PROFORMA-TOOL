@@ -115,9 +115,7 @@ def _xnpv_derivative(cash_flows: list[float], dates: list[date], rate: float) ->
     return dxnpv
 
 
-def _try_xirr_with_guess(
-    cash_flows: list[float], dates: list[date], guess: float
-) -> float | None:
+def _try_xirr_with_guess(cash_flows: list[float], dates: list[date], guess: float) -> float | None:
     """
     Try to calculate XIRR with a specific initial guess.
 

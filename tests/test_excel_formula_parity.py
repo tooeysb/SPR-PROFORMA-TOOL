@@ -1060,11 +1060,9 @@ class TestWaterfallDistributions:
         """Total LP + GP distributions equal total positive cash flows."""
         distributions = waterfall_results["distributions"]
         total_to_lp = sum(d["total_to_lp"] for d in distributions)
-        total_to_gp = sum(d["total_to_gp"] for d in distributions)
 
         # Total distributed should approximately match Excel totals
         expected_lp = EXCEL_WATERFALL["lp_total_cf"]
-        expected_gp = EXCEL_WATERFALL["gp_total_cf"]
 
         # Allow larger tolerance for waterfall totals
         assert abs(total_to_lp - expected_lp) < 1000, (
@@ -1100,7 +1098,6 @@ class TestLeaseCommissions:
         # Excel values
         expected_annual = EXCEL_LC["year_1_annual_rent"]
         expected_net = EXCEL_LC["year_1_net_rent"]
-        expected_lc = EXCEL_LC["year_1_lc"]
 
         # Verify formula produces expected results for same inputs
         # Note: Excel may use different SF, so we verify the formula logic

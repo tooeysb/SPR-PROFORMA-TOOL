@@ -145,7 +145,7 @@ def get_api_url():
     try:
         requests.get("http://localhost:8000/health", timeout=2)
         return LOCAL_API
-    except:
+    except Exception:
         return PROD_API
 
 

@@ -377,7 +377,6 @@ def calculate_property_tax_escalation(annual_rate: float, period: int) -> float:
     # Year 1 = months 1-12, Year 2 = months 13-24, etc.
     completed_years = (period - 1) // 12
     return (1 + annual_rate) ** completed_years
-    return (1 + annual_rate) ** (period / 12)
 
 
 def calculate_escalation_factor(

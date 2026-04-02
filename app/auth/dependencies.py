@@ -2,7 +2,6 @@
 FastAPI dependencies for authentication and authorization.
 """
 
-
 from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 

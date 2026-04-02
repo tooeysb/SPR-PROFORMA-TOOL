@@ -11,6 +11,9 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from app.calculations import cashflow, irr, waterfall
+from app.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 router = APIRouter()
 
@@ -150,6 +153,13 @@ class CashFlowResponse(BaseModel):
 @router.post("/cashflows", response_model=CashFlowResponse)
 async def calculate_cashflows(inputs: CashFlowInput):
     """Calculate full cash flow projections and return metrics."""
+    logger.info(
+        "Calculating cashflows: purchase_price=%.2f, hold=%d months, exit_cap=%.4f, tenants=%d",
+        inputs.purchase_price,
+        inputs.hold_period_months,
+        inputs.exit_cap_rate,
+        len(inputs.tenants) if inputs.tenants else 0,
+    )
 
     # Generate dates
     dates = cashflow.generate_monthly_dates(inputs.acquisition_date, inputs.hold_period_months)
@@ -373,7 +383,7 @@ async def calculate_irr_endpoint(inputs: IRRInput):
             npv_at_10_percent=npv,
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from None
 
 
 class AmortizationInput(BaseModel):

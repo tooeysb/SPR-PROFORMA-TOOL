@@ -2,6 +2,7 @@
 Main FastAPI application entry point.
 """
 
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -9,13 +10,13 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-import os
-
 from app.api import router as api_router
 from app.api.admin.users import router as admin_users_router
 from app.api.auth import router as auth_router
 from app.config import get_settings
+from app.core.errors import register_error_handlers
 from app.db.database import init_db
+from app.middleware.correlation import CorrelationIDMiddleware
 from app.middleware.sso import SSOMiddleware
 
 settings = get_settings()
@@ -39,11 +40,17 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Register standardized error handlers
+register_error_handlers(app)
+
 # Mount static files
 app.mount("/static", StaticFiles(directory="app/ui/static"), name="static")
 
 # Set up templates
 templates = Jinja2Templates(directory="app/ui/templates")
+
+# Correlation ID middleware (always enabled — outermost middleware runs first)
+app.add_middleware(CorrelationIDMiddleware)
 
 # SSO middleware (only if SSO_JWT_SECRET is configured)
 if os.environ.get("SSO_JWT_SECRET"):
