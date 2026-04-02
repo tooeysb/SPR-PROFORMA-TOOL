@@ -53,3 +53,4 @@ migrations/versions/*.pyc
 
 # Claude Code local settings (machine-specific)
 .claude/settings.local.json
+.venv/
