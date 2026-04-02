@@ -59,8 +59,9 @@ app.include_router(admin_users_router)  # /api/admin/users/* (prefix defined in 
 async def home(request: Request):
     """Render the home page."""
     return templates.TemplateResponse(
-        "index.html",
-        {"request": request, "title": settings.app_name},
+        request=request,
+        name="index.html",
+        context={"title": settings.app_name},
     )
 
 
@@ -68,8 +69,9 @@ async def home(request: Request):
 async def model_view(request: Request, model_id: str, property_id: str | None = None):
     """Render the financial model editor."""
     return templates.TemplateResponse(
-        "model.html",
-        {"request": request, "model_id": model_id, "property_id": property_id or ""},
+        request=request,
+        name="model.html",
+        context={"model_id": model_id, "property_id": property_id or ""},
     )
 
 
@@ -85,25 +87,25 @@ async def health_check():
 @app.get("/auth/login", response_class=HTMLResponse)
 async def login_page(request: Request):
     """Render the login page."""
-    return templates.TemplateResponse("auth/login.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="auth/login.html")
 
 
 @app.get("/auth/register", response_class=HTMLResponse)
 async def register_page(request: Request):
     """Render the registration page."""
-    return templates.TemplateResponse("auth/register.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="auth/register.html")
 
 
 @app.get("/auth/forgot-password", response_class=HTMLResponse)
 async def forgot_password_page(request: Request):
     """Render the forgot password page."""
-    return templates.TemplateResponse("auth/forgot-password.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="auth/forgot-password.html")
 
 
 @app.get("/auth/reset-password", response_class=HTMLResponse)
 async def reset_password_page(request: Request):
     """Render the reset password page."""
-    return templates.TemplateResponse("auth/reset-password.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="auth/reset-password.html")
 
 
 # === Admin Page Routes ===
@@ -112,4 +114,4 @@ async def reset_password_page(request: Request):
 @app.get("/admin/users", response_class=HTMLResponse)
 async def admin_users_page(request: Request):
     """Render the admin users management page."""
-    return templates.TemplateResponse("admin/users.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="admin/users.html")
