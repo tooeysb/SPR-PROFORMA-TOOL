@@ -46,7 +46,10 @@ async def sso_callback(
         return RedirectResponse(url=sso_retry_url, status_code=302)
 
     try:
-        payload = pyjwt.decode(token, sso_secret, algorithms=["HS256"])
+        payload = pyjwt.decode(
+            token, sso_secret, algorithms=["HS256"],
+            options={"verify_aud": False},
+        )
     except (pyjwt.ExpiredSignatureError, pyjwt.InvalidTokenError):
         return RedirectResponse(url=sso_retry_url, status_code=302)
 
