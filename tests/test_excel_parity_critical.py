@@ -28,6 +28,7 @@ try:
 except ImportError:
     HAS_PYTEST = False
 
+import time
 from typing import Any
 
 import requests
@@ -149,12 +150,64 @@ def get_api_url():
         return PROD_API
 
 
-def call_api(params: dict[str, Any]) -> dict[str, Any]:
-    """Call the cashflows API and return the response."""
+def wake_heroku_dyno(url: str, max_retries: int = 3, initial_delay: float = 5.0) -> None:
+    """Send a GET request to the health endpoint to wake a sleeping Heroku dyno.
+
+    Heroku eco/basic dynos sleep after 30 minutes of inactivity. The first
+    request wakes the dyno but may take 10-30 seconds. We hit /health and
+    retry until we get a 200, so the subsequent POST to /api/calculate/cashflows
+    doesn't fail with an empty response.
+    """
+    health_url = url.rsplit("/api/", 1)[0] + "/health"
+    for attempt in range(max_retries):
+        try:
+            resp = requests.get(health_url, timeout=30)
+            if resp.status_code == 200:
+                return
+        except requests.RequestException:
+            pass
+        delay = initial_delay * (2**attempt)
+        print(f"  Dyno not ready (attempt {attempt + 1}/{max_retries}), retrying in {delay}s...")
+        time.sleep(delay)
+    print("  Warning: Could not confirm dyno is awake; proceeding anyway.")
+
+
+def call_api(params: dict[str, Any], max_retries: int = 3) -> dict[str, Any]:
+    """Call the cashflows API and return the response.
+
+    Includes retry logic to handle Heroku dyno wake-up latency and transient
+    errors that return non-JSON responses (HTML error pages, empty bodies).
+    """
     url = get_api_url()
-    response = requests.post(url, json=params, timeout=60)
-    response.raise_for_status()
-    return response.json()
+
+    # Wake the dyno first if hitting production
+    if "herokuapp.com" in url:
+        print("  Waking Heroku dyno...")
+        wake_heroku_dyno(url)
+
+    last_error = None
+    for attempt in range(max_retries):
+        try:
+            response = requests.post(url, json=params, timeout=120)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.JSONDecodeError as e:
+            last_error = e
+            body_preview = response.text[:200] if response.text else "(empty)"
+            print(
+                f"  Non-JSON response (attempt {attempt + 1}/{max_retries}), "
+                f"status={response.status_code}, body={body_preview}"
+            )
+        except requests.RequestException as e:
+            last_error = e
+            print(f"  Request failed (attempt {attempt + 1}/{max_retries}): {e}")
+
+        if attempt < max_retries - 1:
+            delay = 10 * (2**attempt)
+            print(f"  Retrying in {delay}s...")
+            time.sleep(delay)
+
+    raise RuntimeError(f"API call failed after {max_retries} retries. Last error: {last_error}")
 
 
 # =============================================================================
