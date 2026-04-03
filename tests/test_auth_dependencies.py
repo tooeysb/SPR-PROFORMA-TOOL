@@ -4,8 +4,6 @@ Tests for auth dependencies: token extraction and user resolution.
 
 from unittest.mock import MagicMock
 
-import pytest
-
 from app.auth.dependencies import get_token_from_request
 
 

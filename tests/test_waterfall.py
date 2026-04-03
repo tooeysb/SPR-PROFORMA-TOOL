@@ -21,7 +21,6 @@ from app.calculations.waterfall import (
     extract_lp_cash_flows,
 )
 
-
 # ── Monthly Pref Rate ────────────────────────────────────────────────────────
 
 

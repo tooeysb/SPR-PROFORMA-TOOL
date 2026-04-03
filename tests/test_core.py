@@ -6,10 +6,7 @@ import json
 import logging
 from unittest.mock import patch
 
-import pytest
-
-from app.core.request_context import get_request_id, set_request_id
-
+from app.core.request_context import set_request_id
 
 # ── Error Handling ───────────────────────────────────────────────────────────
 

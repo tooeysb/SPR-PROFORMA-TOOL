@@ -27,25 +27,24 @@ from app.calculations.cashflow import (
     sum_cash_flows,
 )
 
-
 # ── Helper: Standard tenant fixture ──────────────────────────────────────────
 
 
 def _base_tenant(**overrides) -> Tenant:
-    defaults = dict(
-        name="Test Tenant",
-        rsf=10000.0,
-        in_place_rent_psf=50.0,
-        market_rent_psf=55.0,
-        lease_end_month=60,
-        apply_rollover_costs=True,
-        free_rent_months=6,
-        ti_buildout_months=6,
-        lc_percent_years_1_5=0.06,
-        lc_percent_years_6_plus=0.03,
-        new_lease_term_years=10,
-        ti_allowance_psf=25.0,
-    )
+    defaults = {
+        "name": "Test Tenant",
+        "rsf": 10000.0,
+        "in_place_rent_psf": 50.0,
+        "market_rent_psf": 55.0,
+        "lease_end_month": 60,
+        "apply_rollover_costs": True,
+        "free_rent_months": 6,
+        "ti_buildout_months": 6,
+        "lc_percent_years_1_5": 0.06,
+        "lc_percent_years_6_plus": 0.03,
+        "new_lease_term_years": 10,
+        "ti_allowance_psf": 25.0,
+    }
     defaults.update(overrides)
     return Tenant(**defaults)
 
@@ -251,24 +250,24 @@ class TestDateHelpers:
 class TestGenerateCashFlows:
     @pytest.fixture
     def base_params(self):
-        return dict(
-            acquisition_date=date(2025, 1, 1),
-            hold_period_months=12,
-            purchase_price=10000.0,  # $10M (in $000s)
-            closing_costs=200.0,
-            total_sf=10000.0,
-            in_place_rent_psf=50.0,
-            market_rent_psf=55.0,
-            rent_growth=0.025,
-            vacancy_rate=0.05,
-            fixed_opex_psf=10.0,
-            management_fee_percent=0.04,
-            property_tax_amount=100.0,
-            capex_reserve_psf=2.0,
-            expense_growth=0.025,
-            exit_cap_rate=0.05,
-            sales_cost_percent=0.01,
-        )
+        return {
+            "acquisition_date": date(2025, 1, 1),
+            "hold_period_months": 12,
+            "purchase_price": 10000.0,  # $10M (in $000s)
+            "closing_costs": 200.0,
+            "total_sf": 10000.0,
+            "in_place_rent_psf": 50.0,
+            "market_rent_psf": 55.0,
+            "rent_growth": 0.025,
+            "vacancy_rate": 0.05,
+            "fixed_opex_psf": 10.0,
+            "management_fee_percent": 0.04,
+            "property_tax_amount": 100.0,
+            "capex_reserve_psf": 2.0,
+            "expense_growth": 0.025,
+            "exit_cap_rate": 0.05,
+            "sales_cost_percent": 0.01,
+        }
 
     def test_output_length(self, base_params):
         cfs = generate_cash_flows(**base_params)

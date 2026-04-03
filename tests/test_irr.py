@@ -20,7 +20,6 @@ from app.calculations.irr import (
     monthly_to_annual_irr,
 )
 
-
 # ── NPV ──────────────────────────────────────────────────────────────────────
 
 

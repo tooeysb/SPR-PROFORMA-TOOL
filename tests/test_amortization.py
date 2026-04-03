@@ -19,7 +19,6 @@ from app.calculations.amortization import (
     generate_amortization_schedule,
 )
 
-
 # ── Monthly Payment (PMT) ────────────────────────────────────────────────────
 
 

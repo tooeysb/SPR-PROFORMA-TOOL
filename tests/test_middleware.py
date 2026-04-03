@@ -2,12 +2,7 @@
 Tests for middleware: SSO and Correlation ID.
 """
 
-from unittest.mock import AsyncMock, MagicMock, patch
-
-import pytest
-
 from app.core.request_context import get_request_id, set_request_id
-
 
 # ── Request Context ──────────────────────────────────────────────────────────
 

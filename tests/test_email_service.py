@@ -2,9 +2,7 @@
 Tests for email service.
 """
 
-from unittest.mock import MagicMock, patch
-
-import pytest
+from unittest.mock import patch
 
 from app.services.email import EmailService
 

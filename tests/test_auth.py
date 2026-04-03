@@ -3,9 +3,6 @@ Tests for authentication modules: JWT, password hashing, and token utilities.
 """
 
 from datetime import datetime, timedelta
-from unittest.mock import patch
-
-import pytest
 
 from app.auth.jwt import (
     create_access_token,
@@ -20,7 +17,6 @@ from app.auth.tokens import (
     hash_token,
     verify_token_hash,
 )
-
 
 # ── JWT Token Creation & Validation ──────────────────────────────────────────
 
